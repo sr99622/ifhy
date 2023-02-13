@@ -162,6 +162,8 @@ void GLWidget::start(void* widget)
 
     try {
         avio::Player player;
+        player.width = [&]() { return glWidget->width(); };
+        player.height = [&]() { return glWidget->height(); };
         glWidget->player = &player;
 
         avio::Reader reader(glWidget->uri);
