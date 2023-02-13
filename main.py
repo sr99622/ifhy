@@ -85,7 +85,7 @@ class MainWindow(QMainWindow):
     def pythonCallback(self, f):
         img = np.array(f, copy = False)
 
-        cv2.rectangle(img, (100, 100), (200, 200), (255, 255, 255), 5)
+        cv2.rectangle(img, (500, 600), (900, 800), (0, 255, 0), 5)
 
         return f
 
@@ -111,9 +111,9 @@ class MainWindow(QMainWindow):
         self.avWidget.player = self.player
 
         if platform.system() == "Linux":
-            self.reader = avio.Reader("/home/stephen/Videos/odessa.mp4")
+            self.reader = avio.Reader("/home/stephen/Videos/news.mp4")
         else:
-            self.reader = avio.Reader("C:/Users/sr996/Videos/odessa.mp4")
+            self.reader = avio.Reader("C:/Users/sr996/Videos/news.mp4")
         self.reader.set_video_out("vpq_reader")
         self.reader.set_audio_out("apq_reader")
         self.avWidget.duration = self.reader.duration()
