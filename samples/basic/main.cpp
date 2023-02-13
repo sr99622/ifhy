@@ -2,20 +2,20 @@
 
 int main(int argc, char** argv)
 {
-    if (argc < 2) {
-        std::cout << "Usage: sample-cmd filename" << std::endl;
-        return 1;
-    }
-
-    std::cout << "playing file: " << argv[1] << std::endl;
-
     avio::Player player;
 
-    avio::Reader reader(argv[1]);
+    std::string filename;
+#ifdef _WIN32 
+    filename = "C:/Users/sr99622/Videos/news.mp4";
+#else
+    filename = "/home/stephen/Videos/news.mp4";
+#endif
+
+    avio::Reader reader(filename.c_str());
     reader.set_video_out("vpq_reader");
     reader.set_audio_out("apq_reader");
 
-    avio::Decoder videoDecoder(reader, AVMEDIA_TYPE_VIDEO, AV_HWDEVICE_TYPE_CUDA);
+    avio::Decoder videoDecoder(reader, AVMEDIA_TYPE_VIDEO, AV_HWDEVICE_TYPE_NONE);
     videoDecoder.set_video_in(reader.video_out());
     videoDecoder.set_video_out("vfq_decoder");
 
