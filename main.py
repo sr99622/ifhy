@@ -127,7 +127,7 @@ class MainWindow(QMainWindow):
             self.videoDecoder.set_video_out("vfq_decoder")
 
             #videoFilter = avio.Filter(videoDecoder, "scale=1280x720,format=rgb24")
-            self.videoFilter = avio.Filter(self.videoDecoder, "format=bgr24")
+            self.videoFilter = avio.Filter(self.videoDecoder, "format=rgb24")
             self.videoFilter.set_video_in(self.videoDecoder.video_out())
             self.videoFilter.set_video_out("vfq_filter")
 
@@ -141,7 +141,8 @@ class MainWindow(QMainWindow):
 
             self.display.progressCallback = lambda n: self.updateProgress(n)
             print(QGuiApplication.platformName())
-            self.display.hWnd = self.avWidget.winId()
+            self.display.renderCallback = lambda f: self.avWidget.renderCallback(f)
+            #self.display.hWnd = self.avWidget.winId()
             print("widget width: ", self.avWidget.width(), " height: ", self.avWidget.height())
             self.player.width = self.avWidget.width()
             self.player.height = self.avWidget.height()
