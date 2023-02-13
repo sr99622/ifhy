@@ -6,7 +6,7 @@ int main(int argc, char** argv)
 
     std::string filename;
 #ifdef _WIN32 
-    filename = "C:/Users/sr99622/Videos/news.mp4";
+    filename = "C:/Users/sr996/Videos/news.mp4";
 #else
     filename = "/home/stephen/Videos/news.mp4";
 #endif

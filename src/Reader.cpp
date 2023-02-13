@@ -74,9 +74,10 @@ Reader::Reader(const char* filename)
     }
     catch (const Exception& e) {
         close();
+        std::cout << "reader exception" << std::endl;
         std::stringstream str;
         str << "Reader constructor exception: " << e.what();
-        throw Exception(str.str());
+        throw std::runtime_error(str.str());
     }
 }
 
