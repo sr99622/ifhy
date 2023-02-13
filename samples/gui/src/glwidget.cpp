@@ -56,8 +56,9 @@ void GLWidget::play(const QString& arg)
         memset(uri, 0, 1024);
         strcpy(uri, arg.toLatin1().data());
 
-        std::thread process_thread(start, this);
-        process_thread.detach();
+        //std::thread process_thread(start, this);
+        //process_thread.detach();
+        start(this);
     }
     catch (const std::runtime_error& e) {
         std::cout << "GLWidget play error: " << e.what() << std::endl;
@@ -181,8 +182,9 @@ void GLWidget::start(void* widget)
         }
 
         avio::Display display(reader);
-        display.renderCallback = renderCallback;
+        //display.renderCallback = renderCallback;
         //display.hWnd = (void*)glWidget->winId();
+        display.hWnd = glWidget->winId();
         display.progressCallback = progressCallback;
         display.infoCallback = infoCallback;
         display.errorCallback = errorCallback;
