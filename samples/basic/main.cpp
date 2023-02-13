@@ -2,16 +2,18 @@
 
 int main(int argc, char** argv)
 {
+    if (argc < 2) {
+        std::cout << "Usage: sample-cmd filename" << std::endl;
+        return 1;
+    }
+
+    std::cout << "playing file: " << argv[1] << std::endl;
+
     avio::Player player;
+    player.width = []() { return 1920; };
+    player.height = []() { return 1080; };
 
-    std::string filename;
-#ifdef _WIN32 
-    filename = "C:/Users/sr996/Videos/news.mp4";
-#else
-    filename = "/home/stephen/Videos/news.mp4";
-#endif
-
-    avio::Reader reader(filename.c_str());
+    avio::Reader reader(argv[1]);
     reader.set_video_out("vpq_reader");
     reader.set_audio_out("apq_reader");
 

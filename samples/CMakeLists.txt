@@ -33,6 +33,14 @@ endif()
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
+add_executable(skeletal
+    skeletal/main.cpp
+)
+
+target_link_libraries(skeletal
+    libavio
+)
+
 add_executable(basic
     basic/main.cpp
 )

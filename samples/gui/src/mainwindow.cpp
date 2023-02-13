@@ -85,11 +85,7 @@ void MainWindow::onBtnPlayClicked()
     }
     else {
         std::cout << "play" << std::endl;
-#ifdef _WIN32
-        glWidget->play("C:/Users/sr996/Videos/news.mp4");
-#else
         glWidget->play("/home/stephen/Videos/news.mp4");
-#endif
     }
     setPlayButton();
 }
