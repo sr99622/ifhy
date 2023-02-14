@@ -36,6 +36,7 @@ namespace avio
 static void read(Player* player) 
 {
     Reader* reader = player->reader;
+    /*
     if (reader->has_video() && !reader->vpq_name.empty()) {
         reader->vpq = player->pkt_queues[reader->vpq_name];
         if (reader->vpq_max_size > 0)
@@ -46,7 +47,7 @@ static void read(Player* player)
         if (reader->apq_max_size > 0)
             reader->apq->set_max_size(reader->apq_max_size);
     }
-
+    */
 
     try {
         while (true)
@@ -141,8 +142,8 @@ static void decode(Player* player, AVMediaType mediaType)
             break;
     }
 
-    decoder->frame_q = player->frame_queues[decoder->frame_q_name];
-    decoder->pkt_q = player->pkt_queues[decoder->pkt_q_name];
+    //decoder->frame_q = player->frame_queues[decoder->frame_q_name];
+    //decoder->pkt_q = player->pkt_queues[decoder->pkt_q_name];
 
     try {
         while (true)
@@ -180,8 +181,8 @@ static void filter(Player* player, AVMediaType mediaType)
             break;
     }
 
-    filter->frame_in_q = player->frame_queues[filter->q_in_name];
-    filter->frame_out_q = player->frame_queues[filter->q_out_name];
+    //filter->frame_in_q = player->frame_queues[filter->q_in_name];
+    //filter->frame_out_q = player->frame_queues[filter->q_out_name];
 
     try {
         while (true)

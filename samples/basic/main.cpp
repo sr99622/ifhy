@@ -31,15 +31,20 @@ int main(int argc, char** argv)
     audioDecoder.set_audio_in(reader.audio_out());
     audioDecoder.set_audio_out("afq_decoder");
 
+    avio::Filter audioFilter(audioDecoder, "anull");
+    audioFilter.set_audio_in(audioDecoder.audio_out());
+    audioFilter.set_audio_out("afq_filter");
+
     avio::Display display(reader);
     display.set_video_in(videoFilter.video_out());
     //display.set_video_in(videoDecoder.video_out());
-    display.set_audio_in(audioDecoder.audio_out());
+    display.set_audio_in(audioFilter.audio_out());
 
     player.add_reader(reader);
     player.add_decoder(videoDecoder);
     player.add_filter(videoFilter);
     player.add_decoder(audioDecoder);
+    player.add_filter(audioFilter);
     player.add_display(display);
 
     player.run();

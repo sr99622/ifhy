@@ -130,6 +130,7 @@ void GLWidget::start(void* widget)
     avio::Decoder* videoDecoder = nullptr;
     avio::Filter* videoFilter = nullptr;
     avio::Decoder* audioDecoder = nullptr;
+    avio::Filter* audioFilter = nullptr;
 
     std::function<void(const std::string&)> infoCallback = [&](const std::string& arg)
     {
@@ -218,8 +219,15 @@ void GLWidget::start(void* widget)
             audioDecoder->errorCallback = errorCallback;
             audioDecoder->set_audio_in(reader.audio_out());
             audioDecoder->set_audio_out("afq_decoder");
-            display.set_audio_in(audioDecoder->audio_out());
             player.add_decoder(*audioDecoder);
+
+            audioFilter = new avio::Filter(*audioDecoder, "anull");
+            audioFilter->infoCallback = infoCallback;
+            audioFilter->errorCallback = errorCallback;
+            audioFilter->set_audio_in(audioDecoder->audio_out());
+            audioFilter->set_audio_out("afq_filter");
+            player.add_filter(*audioFilter);
+            display.set_audio_in(audioFilter->audio_out());
         }
 
         player.add_reader(reader);
@@ -237,6 +245,7 @@ void GLWidget::start(void* widget)
 
     if (videoFilter) delete videoFilter;
     if (videoDecoder) delete videoDecoder;
+    if (audioFilter) delete audioFilter;
     if (audioDecoder) delete audioDecoder;
     glWidget->player = nullptr;
     std::cout << "player done" << std::endl;

@@ -48,6 +48,7 @@ void Player::toggle_pipe_out(const std::string& filename)
 
 void Player::clear_queues()
 {
+    /*
     PKT_Q_MAP::iterator pkt_q;
     for (pkt_q = pkt_queues.begin(); pkt_q != pkt_queues.end(); ++pkt_q) {
         pkt_q->second->clear();
@@ -56,6 +57,7 @@ void Player::clear_queues()
     for (frame_q = frame_queues.begin(); frame_q != frame_queues.end(); ++frame_q) {
         frame_q->second->clear();
     }
+    */
 }
 
 void Player::clear_decoders()
@@ -142,6 +144,7 @@ void Player::run()
 {
     running = true;
     
+    /*
     for (const std::string& name : pkt_q_names) {
         if (!name.empty()) {
             if (pkt_queues.find(name) == pkt_queues.end())
@@ -155,43 +158,43 @@ void Player::run()
                 frame_queues.insert({ name, new Queue<Frame>() });
         }
     }
+    */
 
-    if (reader) {
-        ops.push_back(new std::thread(read, this));
-    }
+    Queue<Packet> vpq_reader;
+    Queue<Packet> apq_reader;
+    reader->vpq = &vpq_reader;
+    reader->apq = &apq_reader;
+    ops.push_back(new std::thread(read, this));
 
-    if (videoDecoder) {
-        ops.push_back(new std::thread(decode, this, AVMEDIA_TYPE_VIDEO));
-    }
+    Queue<Frame> vfq_decoder;
+    videoDecoder->pkt_q = &vpq_reader;
+    videoDecoder->frame_q = &vfq_decoder;
+    ops.push_back(new std::thread(decode, this, AVMEDIA_TYPE_VIDEO));
 
-    if (videoFilter) {
-        ops.push_back(new std::thread(filter, this, AVMEDIA_TYPE_VIDEO));
-    }
+    Queue<Frame> vfq_filter;
+    videoFilter->frame_in_q = &vfq_decoder;
+    videoFilter->frame_out_q = &vfq_filter;
+    ops.push_back(new std::thread(filter, this, AVMEDIA_TYPE_VIDEO));
 
-    if (audioDecoder) {
-        ops.push_back(new std::thread(decode, this, AVMEDIA_TYPE_AUDIO));
-    }
+    Queue<Frame> afq_decoder;
+    audioDecoder->pkt_q = &apq_reader;
+    audioDecoder->frame_q = &afq_decoder;
+    ops.push_back(new std::thread(decode, this, AVMEDIA_TYPE_AUDIO));
 
-    if (audioFilter) {
-        ops.push_back(new std::thread(filter, this, AVMEDIA_TYPE_AUDIO));
-    }
+    Queue<Frame> afq_filter;
+    audioFilter->frame_in_q = &afq_decoder;
+    audioFilter->frame_out_q = &afq_filter;
+    ops.push_back(new std::thread(filter, this, AVMEDIA_TYPE_AUDIO));
 
-    if (display) {
+    display->vfq_in = &vfq_filter;
+    display->afq_in = &afq_filter;
 
-        if (!display->vfq_in_name.empty()) display->vfq_in = frame_queues[display->vfq_in_name];
-        if (!display->afq_in_name.empty()) display->afq_in = frame_queues[display->afq_in_name];
+    display->init();
 
-        if (!display->vfq_out_name.empty()) display->vfq_out = frame_queues[display->vfq_out_name];
-        if (!display->afq_out_name.empty()) display->afq_out = frame_queues[display->afq_out_name];
+    while (display->display()) {}
+    running = false;
 
-        display->init();
-
-        while (display->display()) {}
-        running = false;
-
-        std::cout << "display done" << std::endl;
-
-    }
+    std::cout << "display done" << std::endl;
 
     cleanup();
 }

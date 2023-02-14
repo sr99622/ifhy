@@ -137,9 +137,13 @@ class MainWindow(QMainWindow):
             self.audioDecoder.set_audio_in(self.reader.audio_out())
             self.audioDecoder.set_audio_out("afq_decoder")
 
+            self.audioFilter = avio.Filter(self.audioDecoder, "anull")
+            self.audioFilter.set_audio_in(self.audioDecoder.audio_out())
+            self.audioFilter.set_audio_out("afq_filter")
+
             self.display = avio.Display(self.reader)
             self.display.set_video_in(self.videoFilter.video_out())
-            self.display.set_audio_in(self.audioDecoder.audio_out())
+            self.display.set_audio_in(self.audioFilter.audio_out())
 
             self.display.progressCallback = lambda n: self.updateProgress(n)
             print(QGuiApplication.platformName())
@@ -160,6 +164,7 @@ class MainWindow(QMainWindow):
             self.player.add_decoder(self.videoDecoder)
             self.player.add_filter(self.videoFilter)
             self.player.add_decoder(self.audioDecoder)
+            self.player.add_filter(self.audioFilter)
             self.player.add_display(self.display)
 
             self.player.start()
