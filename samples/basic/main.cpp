@@ -14,31 +14,31 @@ int main(int argc, char** argv)
     player.height = []() { return 1080; };
 
     avio::Reader reader(argv[1]);
-    reader.set_video_out("vpq_reader");
-    reader.set_audio_out("apq_reader");
+    //reader.set_video_out("vpq_reader");
+    //reader.set_audio_out("apq_reader");
 
     avio::Decoder videoDecoder(reader, AVMEDIA_TYPE_VIDEO, AV_HWDEVICE_TYPE_NONE);
-    videoDecoder.set_video_in(reader.video_out());
-    videoDecoder.set_video_out("vfq_decoder");
+    //videoDecoder.set_video_in(reader.video_out());
+    //videoDecoder.set_video_out("vfq_decoder");
 
     //avio::Filter videoFilter(videoDecoder, "scale=1280x720,format=rgb24");
     avio::Filter videoFilter(videoDecoder, "null");
-    videoFilter.set_video_in(videoDecoder.video_out());
-    videoFilter.set_video_out("vfq_filter");
+    //videoFilter.set_video_in(videoDecoder.video_out());
+    //videoFilter.set_video_out("vfq_filter");
     //videoFilter.show_frames = true;
 
     avio::Decoder audioDecoder(reader, AVMEDIA_TYPE_AUDIO);
-    audioDecoder.set_audio_in(reader.audio_out());
-    audioDecoder.set_audio_out("afq_decoder");
+    //audioDecoder.set_audio_in(reader.audio_out());
+    //audioDecoder.set_audio_out("afq_decoder");
 
     avio::Filter audioFilter(audioDecoder, "anull");
-    audioFilter.set_audio_in(audioDecoder.audio_out());
-    audioFilter.set_audio_out("afq_filter");
+    //audioFilter.set_audio_in(audioDecoder.audio_out());
+    //audioFilter.set_audio_out("afq_filter");
 
     avio::Display display(reader);
-    display.set_video_in(videoFilter.video_out());
+    //display.set_video_in(videoFilter.video_out());
     //display.set_video_in(videoDecoder.video_out());
-    display.set_audio_in(audioFilter.audio_out());
+    //display.set_audio_in(audioFilter.audio_out());
 
     player.add_reader(reader);
     player.add_decoder(videoDecoder);

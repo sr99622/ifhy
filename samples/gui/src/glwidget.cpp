@@ -194,40 +194,27 @@ void GLWidget::start(void* widget)
         display.mute = glWidget->mute;
 
         if (reader.has_video() && !glWidget->disable_video) {
-            reader.set_video_out("vpq_reader");
-            //reader.show_video_pkts = true;
             videoDecoder = new avio::Decoder(reader, AVMEDIA_TYPE_VIDEO, AV_HWDEVICE_TYPE_NONE);
             videoDecoder->infoCallback = infoCallback;
             videoDecoder->errorCallback = errorCallback;
-            videoDecoder->set_video_in(reader.video_out());
-            videoDecoder->set_video_out("vfq_decoder");
             player.add_decoder(*videoDecoder);
             
             videoFilter = new avio::Filter(*videoDecoder, "format=rgb24");
             videoFilter->infoCallback = infoCallback;
             videoFilter->errorCallback = errorCallback;
-            videoFilter->set_video_in(videoDecoder->video_out());
-            videoFilter->set_video_out("vfq_filter");
             player.add_filter(*videoFilter);
-            display.set_video_in(videoFilter->video_out());
         }
 
         if (reader.has_audio() && !glWidget->disable_audio) {
-            reader.set_audio_out("apq_reader");
             audioDecoder = new avio::Decoder(reader, AVMEDIA_TYPE_AUDIO);
             audioDecoder->infoCallback = infoCallback;
             audioDecoder->errorCallback = errorCallback;
-            audioDecoder->set_audio_in(reader.audio_out());
-            audioDecoder->set_audio_out("afq_decoder");
             player.add_decoder(*audioDecoder);
 
             audioFilter = new avio::Filter(*audioDecoder, "anull");
             audioFilter->infoCallback = infoCallback;
             audioFilter->errorCallback = errorCallback;
-            audioFilter->set_audio_in(audioDecoder->audio_out());
-            audioFilter->set_audio_out("afq_filter");
             player.add_filter(*audioFilter);
-            display.set_audio_in(audioFilter->audio_out());
         }
 
         player.add_reader(reader);

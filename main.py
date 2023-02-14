@@ -117,46 +117,26 @@ class MainWindow(QMainWindow):
                 self.reader = avio.Reader("/home/stephen/Videos/news.mp4")
             else:
                 self.reader = avio.Reader("C:/Users/sr996/Videos/news.mp4")
-            self.reader.set_video_out("vpq_reader")
-            self.reader.set_audio_out("apq_reader")
             self.avWidget.duration = self.reader.duration()
 
             if platform.system() == "Linux":
                 self.videoDecoder = avio.Decoder(self.reader, avio.AVMEDIA_TYPE_VIDEO, avio.AV_HWDEVICE_TYPE_VDPAU)
             else:
                 self.videoDecoder = avio.Decoder(self.reader, avio.AVMEDIA_TYPE_VIDEO, avio.AV_HWDEVICE_TYPE_CUDA)
-            self.videoDecoder.set_video_in(self.reader.video_out())
-            self.videoDecoder.set_video_out("vfq_decoder")
 
             #videoFilter = avio.Filter(videoDecoder, "scale=1280x720,format=rgb24")
             self.videoFilter = avio.Filter(self.videoDecoder, "null")
-            self.videoFilter.set_video_in(self.videoDecoder.video_out())
-            self.videoFilter.set_video_out("vfq_filter")
 
             self.audioDecoder = avio.Decoder(self.reader, avio.AVMEDIA_TYPE_AUDIO)
-            self.audioDecoder.set_audio_in(self.reader.audio_out())
-            self.audioDecoder.set_audio_out("afq_decoder")
 
             self.audioFilter = avio.Filter(self.audioDecoder, "anull")
-            self.audioFilter.set_audio_in(self.audioDecoder.audio_out())
-            self.audioFilter.set_audio_out("afq_filter")
 
             self.display = avio.Display(self.reader)
-            self.display.set_video_in(self.videoFilter.video_out())
-            self.display.set_audio_in(self.audioFilter.audio_out())
 
             self.display.progressCallback = lambda n: self.updateProgress(n)
-            print(QGuiApplication.platformName())
             #self.display.renderCallback = lambda f: self.avWidget.renderCallback(f)
             self.display.hWnd = self.avWidget.winId()
             print("widget width: ", self.avWidget.width(), " height: ", self.avWidget.height())
-            #self.player.width = self.avWidget.width()
-            #self.player.height = self.avWidget.height()
-
-            #if QGuiApplication.platformName() == "windows":
-            #    self.display.hWnd = self.avWidget.winId()
-            #else:
-            #    self.display.renderCallback = lambda f: self.avWidget.renderCallback(f)
 
             self.display.pythonCallback = lambda f: self.pythonCallback(f)
 

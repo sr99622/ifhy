@@ -77,9 +77,6 @@ void Player::key_event(int keyCode)
 void Player::add_reader(Reader& reader_in)
 {
     reader = &reader_in;
-    
-    if (!reader_in.vpq_name.empty()) pkt_q_names.push_back(reader_in.vpq_name);
-    if (!reader_in.apq_name.empty()) pkt_q_names.push_back(reader_in.apq_name);
 }
 
 void Player::add_decoder(Decoder& decoder_in)
@@ -88,9 +85,6 @@ void Player::add_decoder(Decoder& decoder_in)
         videoDecoder = &decoder_in;
     if (decoder_in.mediaType == AVMEDIA_TYPE_AUDIO)
         audioDecoder = &decoder_in;
-
-    pkt_q_names.push_back(decoder_in.pkt_q_name);
-    frame_q_names.push_back(decoder_in.frame_q_name);
 }
 
 void Player::add_filter(Filter& filter_in)
@@ -99,20 +93,12 @@ void Player::add_filter(Filter& filter_in)
         videoFilter = &filter_in;
     if (filter_in.mediaType() == AVMEDIA_TYPE_AUDIO)
         audioFilter = &filter_in;
-
-    frame_q_names.push_back(filter_in.q_in_name);
-    frame_q_names.push_back(filter_in.q_out_name);
 }
 
 void Player::add_display(Display& display_in)
 {
     display_in.player = (void*)this;
     display = &display_in;
-
-    if (!display->vfq_out_name.empty())
-        frame_q_names.push_back(display->vfq_out_name);
-    if (!display->afq_out_name.empty())
-        frame_q_names.push_back(display->afq_out_name);
 }
 
 void Player::cleanup()
@@ -143,22 +129,6 @@ void Player::start()
 void Player::run()
 {
     running = true;
-    
-    /*
-    for (const std::string& name : pkt_q_names) {
-        if (!name.empty()) {
-            if (pkt_queues.find(name) == pkt_queues.end())
-                pkt_queues.insert({ name, new Queue<Packet>() });
-        }
-    }
-
-    for (const std::string& name : frame_q_names) {
-        if (!name.empty()) {
-            if (frame_queues.find(name) == frame_queues.end())
-                frame_queues.insert({ name, new Queue<Frame>() });
-        }
-    }
-    */
 
     Queue<Packet> vpq_reader;
     Queue<Packet> apq_reader;

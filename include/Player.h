@@ -37,9 +37,6 @@
 namespace avio
 {
 
-typedef std::map<std::string, Queue<Packet>*> PKT_Q_MAP;
-typedef std::map<std::string, Queue<Frame>*> FRAME_Q_MAP;
-
 class Player
 {
 
@@ -51,20 +48,12 @@ public:
     Filter*   audioFilter  = nullptr;
     Display*  display      = nullptr;
 
-    PKT_Q_MAP pkt_queues;
-    FRAME_Q_MAP frame_queues;
-    std::vector<std::string> pkt_q_names;
-    std::vector<std::string> frame_q_names;
-    
     std::vector<std::thread*> ops;
 
     std::function<int(void)> width = nullptr;
     std::function<int(void)> height = nullptr;
 
     bool running = false;
-
-    //int width = 0;
-    //int height = 0;
 
     Player() { av_log_set_level(AV_LOG_PANIC); }
     ~Player() { }
