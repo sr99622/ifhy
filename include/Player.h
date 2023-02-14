@@ -28,9 +28,7 @@
 #include "Filter.h"
 #include "Display.h"
 #include "Packet.h"
-#include <iomanip>
 #include <functional>
-#include <map>
 
 #define P ((Player*)player)
 
@@ -53,7 +51,26 @@ public:
     std::function<int(void)> width = nullptr;
     std::function<int(void)> height = nullptr;
 
+    std::function<void(float)> progressCallback = nullptr;
+    std::function<void(const Frame&)> renderCallback = nullptr;
+    std::function<Frame(Frame&)> pythonCallback  = nullptr;
+  	std::function<void(const std::string&)> infoCallback = nullptr;
+	std::function<void(const std::string&)> errorCallback = nullptr;
+    std::function<void(int64_t)> cbMediaPlayingStarted = nullptr;
+    std::function<void(void)> cbMediaPlayingStopped = nullptr;
+
+    uint64_t hWnd = 0;
+    std::string uri;
+    std::string video_filter = "null";
+    std::string audio_filter = "anull";
+    AVHWDeviceType hw_device_type = AV_HWDEVICE_TYPE_NONE;
+
     bool running = false;
+    bool mute = false;
+    int volume = 100;
+
+    int vpq_size = 0;
+    int apq_size = 0;
 
     Player() { av_log_set_level(AV_LOG_PANIC); }
     ~Player() { }
@@ -72,10 +89,11 @@ public:
     void add_display(Display& display_in);
     void clear_queues();
     void clear_decoders();
-    void cleanup();
+    //void cleanup();
     void run();
     void start();
     static void twink(void* caller);
+    bool checkForStreamHeader(const char* name);
 
 };
 

@@ -161,12 +161,16 @@ void GLWidget::start(void* widget)
         glWidget->update();
     };
 
-    try {
+    //try {
         avio::Player player;
         player.width = [&]() { return glWidget->width(); };
         player.height = [&]() { return glWidget->height(); };
-        glWidget->player = &player;
+        player.uri = glWidget->uri;
+        player.hWnd = glWidget->winId();
+        //glWidget->player = &player;
+        player.run();
 
+        /*
         avio::Reader reader(glWidget->uri);
         reader.infoCallback = infoCallback;
         reader.errorCallback = errorCallback;
@@ -234,7 +238,8 @@ void GLWidget::start(void* widget)
     if (videoDecoder) delete videoDecoder;
     if (audioFilter) delete audioFilter;
     if (audioDecoder) delete audioDecoder;
-    glWidget->player = nullptr;
+        */
+    //glWidget->player = nullptr;
     std::cout << "player done" << std::endl;
 }
 

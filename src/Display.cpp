@@ -24,6 +24,7 @@
 namespace avio 
 {
 
+/*
 void Display::init()
 {
     if (P->audioFilter)
@@ -31,6 +32,7 @@ void Display::init()
     else if (P->audioDecoder)
         initAudio(P->audioDecoder->sample_rate(), P->audioDecoder->sample_format(), P->audioDecoder->channels(), P->audioDecoder->channel_layout(), P->audioDecoder->frame_size());
 }
+*/
 
 Display::~Display()
 {
@@ -304,9 +306,15 @@ bool Display::display()
     return playing;
 }
 
-int Display::initAudio(int stream_sample_rate, AVSampleFormat stream_sample_format, int stream_channels, uint64_t stream_channel_layout, int stream_nb_samples)
+int Display::initAudio(Filter* audioFilter)
 {
+    int stream_sample_rate = audioFilter->sample_rate();
+    AVSampleFormat stream_sample_format = audioFilter->sample_format();
+    int stream_channels = audioFilter->channels();
+    uint64_t stream_channel_layout = audioFilter->channel_layout();
+    int stream_nb_samples = audioFilter->frame_size();
     int ret = 0;
+
     try {
 
         if (stream_nb_samples == 0) {

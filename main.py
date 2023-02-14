@@ -112,7 +112,9 @@ class MainWindow(QMainWindow):
             self.avWidget.player = self.player
             self.player.width = lambda : self.avWidget.width()
             self.player.height = lambda : self.avWidget.height()
-
+            self.player.uri = "/home/stephen/Videos/news.mp4"
+            self.player.hWnd = self.avWidget.winId()
+            '''
             if platform.system() == "Linux":
                 self.reader = avio.Reader("/home/stephen/Videos/news.mp4")
             else:
@@ -146,7 +148,7 @@ class MainWindow(QMainWindow):
             self.player.add_decoder(self.audioDecoder)
             self.player.add_filter(self.audioFilter)
             self.player.add_display(self.display)
-
+            '''
             self.player.start()
         except Exception as e:
             print(e)

@@ -48,16 +48,12 @@ void Player::toggle_pipe_out(const std::string& filename)
 
 void Player::clear_queues()
 {
-    /*
-    PKT_Q_MAP::iterator pkt_q;
-    for (pkt_q = pkt_queues.begin(); pkt_q != pkt_queues.end(); ++pkt_q) {
-        pkt_q->second->clear();
-    }
-    FRAME_Q_MAP::iterator frame_q;
-    for (frame_q = frame_queues.begin(); frame_q != frame_queues.end(); ++frame_q) {
-        frame_q->second->clear();
-    }
-    */
+    if (reader->vpq)  reader->vpq->clear();
+    if (reader->apq)  reader->apq->clear();
+    if (videoDecoder) videoDecoder->frame_q->clear();
+    if (videoFilter)  videoFilter->frame_out_q->clear();
+    if (audioDecoder) audioDecoder->frame_q->clear();
+    if (audioFilter)  audioFilter->frame_out_q->clear();
 }
 
 void Player::clear_decoders()
@@ -101,17 +97,18 @@ void Player::add_display(Display& display_in)
     display = &display_in;
 }
 
-void Player::cleanup()
+bool Player::checkForStreamHeader(const char* name)
 {
-    if (reader) {
-        if (reader->vpq) reader->vpq->close();
-        if (reader->apq) reader->apq->close();
-    }
-
-    for (int i = 0; i < ops.size(); i++) {
-        ops[i]->join();
-        delete ops[i];
-    }
+    /*
+    QString str = QString(name).toLower();
+    if (str.startsWith("rtsp://"))
+        return true;
+    if (str.startsWith("http://"))
+        return true;
+    if (str.startsWith("https://"))
+        return true;
+    */
+    return false;
 }
 
 void Player::twink(void* caller)
@@ -128,47 +125,101 @@ void Player::start()
 
 void Player::run()
 {
-    running = true;
+std::cout << "test 1" << std::endl;    
+    try {
+        running = true;
 
-    Queue<Packet> vpq_reader;
-    Queue<Packet> apq_reader;
-    reader->vpq = &vpq_reader;
-    reader->apq = &apq_reader;
-    ops.push_back(new std::thread(read, this));
+        Queue<Packet> vpq_reader;
+        Queue<Frame>  vfq_decoder;
+        Queue<Frame>  vfq_filter;
+        Queue<Packet> apq_reader;
+        Queue<Frame>  afq_decoder;
+        Queue<Frame>  afq_filter;
+std::cout << "test 2" << std::endl;    
 
-    Queue<Frame> vfq_decoder;
-    videoDecoder->pkt_q = &vpq_reader;
-    videoDecoder->frame_q = &vfq_decoder;
-    ops.push_back(new std::thread(decode, this, AVMEDIA_TYPE_VIDEO));
+        reader = new Reader(uri.c_str());
+        reader->showStreamParameters();
+        const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(reader->pix_fmt());
+        if (!desc) throw avio::Exception("No pixel format in video stream");
 
-    Queue<Frame> vfq_filter;
-    videoFilter->frame_in_q = &vfq_decoder;
-    videoFilter->frame_out_q = &vfq_filter;
-    ops.push_back(new std::thread(filter, this, AVMEDIA_TYPE_VIDEO));
+std::cout << "test 3" << std::endl;    
+        if (reader->has_video()) {
+            reader->vpq = &vpq_reader;
 
-    Queue<Frame> afq_decoder;
-    audioDecoder->pkt_q = &apq_reader;
-    audioDecoder->frame_q = &afq_decoder;
-    ops.push_back(new std::thread(decode, this, AVMEDIA_TYPE_AUDIO));
+            videoDecoder = new Decoder(*reader, AVMEDIA_TYPE_VIDEO, hw_device_type);
+            videoDecoder->pkt_q = &vpq_reader;
+            videoDecoder->frame_q = &vfq_decoder;
 
-    Queue<Frame> afq_filter;
-    audioFilter->frame_in_q = &afq_decoder;
-    audioFilter->frame_out_q = &afq_filter;
-    ops.push_back(new std::thread(filter, this, AVMEDIA_TYPE_AUDIO));
+            videoFilter = new Filter(*videoDecoder, video_filter.c_str());
+            videoFilter->frame_in_q = &vfq_decoder;
+            videoFilter->frame_out_q = &vfq_filter;
+        }
 
-    display->vfq_in = &vfq_filter;
-    display->afq_in = &afq_filter;
+std::cout << "test 4" << std::endl;    
+        if (reader->has_audio()) {
+            reader->apq = &apq_reader;
 
-    display->init();
+            audioDecoder = new Decoder(*reader, AVMEDIA_TYPE_AUDIO);
+            audioDecoder->pkt_q = &apq_reader;
+            audioDecoder->frame_q = &afq_decoder;
 
-    while (display->display()) {}
-    running = false;
+            audioFilter = new Filter(*audioDecoder, audio_filter.c_str());
+            audioFilter->frame_in_q = &afq_decoder;
+            audioFilter->frame_out_q = &afq_filter;
+        }
 
-    std::cout << "display done" << std::endl;
+std::cout << "test 5" << std::endl;    
+        if(checkForStreamHeader(uri.c_str())) {
+            if (vpq_size) reader->apq_max_size = vpq_size;
+            if (apq_size) reader->vpq_max_size = vpq_size;
+        }
 
-    cleanup();
-}
+        ops.push_back(new std::thread(read, reader, this));
+        if (videoDecoder) ops.push_back(new std::thread(decode, videoDecoder));
+        if (videoFilter)  ops.push_back(new std::thread(filter, videoFilter));
+        if (audioDecoder) ops.push_back(new std::thread(decode, audioDecoder));
+        if (audioFilter)  ops.push_back(new std::thread(filter, audioFilter));
 
+std::cout << "test 6" << std::endl;    
+        display = new Display(*reader);
+        if (videoFilter) display->vfq_in = videoFilter->frame_out_q;
+        if (audioFilter) display->afq_in = audioFilter->frame_out_q;
+        if (audioFilter) display->initAudio(audioFilter);
+        display->player = this;
+        display->hWnd = hWnd;
 
+        if (cbMediaPlayingStarted) cbMediaPlayingStarted(reader->duration());
+        while (display->display()) {}
+        running = false;
+
+        std::cout << "display done" << std::endl;
+std::cout << "test 7" << std::endl;    
+    }
+    catch (const Exception e) {
+        if (errorCallback) {
+            std::stringstream str;
+            str << "avio player error: " << e.what();
+            errorCallback(str.str());
+        }
+    }
+
+    if (reader) {
+        if (reader->vpq) reader->vpq->close();
+        if (reader->apq) reader->apq->close();
+    }
+
+    for (int i = 0; i < ops.size(); i++) {
+        ops[i]->join();
+        delete ops[i];
+    }
+
+    if (reader)       delete reader;
+    if (videoFilter)  delete videoFilter;
+    if (videoDecoder) delete videoDecoder;
+    if (audioFilter)  delete audioFilter;
+    if (audioDecoder) delete audioDecoder;
+    if (display)      delete display;
+
+    if (cbMediaPlayingStopped) cbMediaPlayingStopped();}
 
 }
