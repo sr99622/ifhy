@@ -34,11 +34,15 @@ public:
     QPushButton* btnRecord;
     Progress* progress;
     GLWidget* glWidget;
-    avio::Player* player = nullptr;
+    avio::Player player;
+    bool playing = false;
     const char* uri;
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+
+signals:
+    void uiUpdate();
 
 public slots:
     void onBtnPlayClicked();
@@ -49,6 +53,7 @@ public slots:
     void mediaProgress(float);
     void criticalError(const QString&);
     void infoMessage(const QString&);
+    void updateUI();
 
 };
 

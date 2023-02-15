@@ -1,7 +1,6 @@
 #include <iostream>
 #include <QGridLayout>
 #include <QMessageBox>
-//#include <QThread>
 #include "mainwindow.h"
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
@@ -21,12 +20,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     progress = new Progress(this);
 
     glWidget = new GLWidget();
-    connect(glWidget, SIGNAL(mediaPlayingStarted(qint64)), this, SLOT(mediaPlayingStarted(qint64)));
-    connect(glWidget, SIGNAL(mediaPlayingStopped()), this, SLOT(mediaPlayingStopped()));
-    connect(glWidget, SIGNAL(mediaProgress(float)), this, SLOT(mediaProgress(float)));
-    connect(glWidget, SIGNAL(criticalError(const QString&)), this, SLOT(criticalError(const QString&)));
-    connect(glWidget, SIGNAL(infoMessage(const QString&)), this, SLOT(infoMessage(const QString&)));
-    connect(progress, SIGNAL(seek(float)), glWidget, SLOT(seek(float)));
 
     QWidget* pnlMain = new QWidget();
     QGridLayout* lytMain = new QGridLayout(pnlMain);
@@ -37,6 +30,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     lytMain->addWidget(progress,    4, 0, 1, 1);
     lytMain->setColumnStretch(0, 10);
     setCentralWidget(pnlMain);
+
+    connect(this, SIGNAL(uiUpdate()), this, SLOT(updateUI()));
 }
 
 MainWindow::~MainWindow()
@@ -46,8 +41,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::setPlayButton()
 {
-    if (player) {
-        if (player->isPaused()) {
+    if (player.running) {
+        if (player.isPaused()) {
             btnPlay->setText("Play");
         }
         else {
@@ -61,8 +56,8 @@ void MainWindow::setPlayButton()
 
 void MainWindow::setRecordButton()
 {
-    if (player) {
-        if (player->isPiping()) {
+    if (player.running) {
+        if (player.isPiping()) {
             btnRecord->setText("=-=-=");
         }
         else {
@@ -79,46 +74,20 @@ void MainWindow::setRecordButton()
 void MainWindow::onBtnPlayClicked()
 {
     std::cout << "onBtnPlayClicked" << std::endl;
-    if (player) {
-        std::cout << "toggle player" << std::endl;
-        player->togglePaused();
+    if (player.running) {
+        player.togglePaused();
     }
     else {
-        std::cout << "play" << std::endl;
-
-        std::function<void(const avio::Frame& frame)> renderCallback = [&](const avio::Frame& frame)
-        {
-            std::cout << "renderCallback start" << std::endl;
-            if (!frame.isValid()) {
-                glWidget->emit infoMessage("render callback recvd invalid Frame");
-                return;
-            }
-            glWidget->mutex.lock();
-            glWidget->f = frame;
-            glWidget->img = QImage(glWidget->f.m_frame->data[0], glWidget->f.m_frame->width,
-                                glWidget->f.m_frame->height, QImage::Format_RGB888);
-            glWidget->mutex.unlock();
-            glWidget->update();
-            std::cout << "renderCallback finish" << std::endl;
-        };
-
-        std::function<void(float)> progressCallback = [&](float arg) 
-        {
-            progress->setProgress(arg);
-        };
-
-        //glWidget->play(uri);
-        player = new avio::Player();
-        player->width = [&]() { return glWidget->width(); };
-        player->height = [&]() { return glWidget->height(); };
-        player->uri = uri;
-        player->hWnd = glWidget->winId();
-        //player->renderCallback = renderCallback;
-        player->progressCallback = [&](float arg) { progress->setProgress(arg); };
-        player->cbMediaPlayingStarted = [&](int64_t duration) { mediaPlayingStarted(duration); };
-        player->cbMediaPlayingStopped = [&]() { mediaPlayingStopped(); };
-        player->start();
-        //while (player->running) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        player.width = [&]() { return glWidget->width(); };
+        player.height = [&]() { return glWidget->height(); };
+        player.uri = uri;
+        player.video_filter = "format=rgb24";
+        //player.hWnd = glWidget->winId();
+        player.renderCallback = [&](const avio::Frame& frame) { glWidget->renderCallback(frame); };
+        player.progressCallback = [&](float arg) { progress->setProgress(arg); };
+        player.cbMediaPlayingStarted = [&](int64_t duration) { mediaPlayingStarted(duration); };
+        player.cbMediaPlayingStopped = [&]() { mediaPlayingStopped(); };
+        player.start();
 
     }
     setPlayButton();
@@ -127,7 +96,8 @@ void MainWindow::onBtnPlayClicked()
 void MainWindow::onBtnStopClicked()
 {
     std::cout << "stop" << std::endl;
-    player->running = false;
+    player.running = false;
+    glWidget->invalidateFrame();
     setPlayButton();
     setRecordButton();
 }
@@ -135,20 +105,28 @@ void MainWindow::onBtnStopClicked()
 void MainWindow::onBtnRecordClicked()
 {
     std::cout << "record" << std::endl;
-    if (glWidget->player)
-        glWidget->player->toggle_pipe_out("test.webm");
+    //if (glWidget->player)
+    //    glWidget->player->toggle_pipe_out("test.webm");
+    setRecordButton();
+}
+
+void MainWindow::updateUI()
+{
+    setPlayButton();
     setRecordButton();
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    glWidget->stop();
+    player.running = false;
+    while (player.display) std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 void MainWindow::mediaPlayingStarted(qint64 duration)
 {
     std::cout << "MainWindow::mediaPlayingStarted" << std::endl;
-    //progress->setDuration(duration);
+    progress->setDuration(duration);
+    emit uiUpdate();
     //setPlayButton();
     //setRecordButton();
 }
@@ -156,8 +134,9 @@ void MainWindow::mediaPlayingStarted(qint64 duration)
 void MainWindow::mediaPlayingStopped()
 {
     std::cout << "MainWindow::mediaPlayingStopped" << std::endl;
-    //progress->setProgress(0);
-    player = nullptr;
+    progress->setProgress(0);
+    emit uiUpdate();
+    //player = nullptr;
     //setPlayButton();
     //setRecordButton();
 }

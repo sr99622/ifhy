@@ -197,16 +197,19 @@ std::cout << "test 1" << std::endl;
         }
     }
 
+    std::cout << "test 2" << std::endl;
     if (reader) {
         if (reader->vpq) reader->vpq->close();
         if (reader->apq) reader->apq->close();
     }
 
+    std::cout << "test 3" << std::endl;
     for (int i = 0; i < ops.size(); i++) {
         ops[i]->join();
         delete ops[i];
     }
 
+    std::cout << "test 4" << std::endl;
     if (reader)       delete reader;
     if (videoFilter)  delete videoFilter;
     if (videoDecoder) delete videoDecoder;
@@ -214,6 +217,7 @@ std::cout << "test 1" << std::endl;
     if (audioDecoder) delete audioDecoder;
     if (display)      delete display;
 
+    std::cout << "test 5" << std::endl;
     if (cbMediaPlayingStopped) cbMediaPlayingStopped();}
 
 }
