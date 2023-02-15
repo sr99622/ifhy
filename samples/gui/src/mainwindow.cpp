@@ -46,8 +46,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::setPlayButton()
 {
-    if (glWidget->player) {
-        if (glWidget->player->isPaused()) {
+    if (player) {
+        if (player->isPaused()) {
             btnPlay->setText("Play");
         }
         else {
@@ -61,8 +61,8 @@ void MainWindow::setPlayButton()
 
 void MainWindow::setRecordButton()
 {
-    if (glWidget->player) {
-        if (glWidget->player->isPiping()) {
+    if (player) {
+        if (player->isPiping()) {
             btnRecord->setText("=-=-=");
         }
         else {
@@ -78,14 +78,48 @@ void MainWindow::setRecordButton()
 
 void MainWindow::onBtnPlayClicked()
 {
-    std::cout << "play" << std::endl;
-    if (glWidget->player) {
+    std::cout << "onBtnPlayClicked" << std::endl;
+    if (player) {
         std::cout << "toggle player" << std::endl;
-        glWidget->player->togglePaused();
+        player->togglePaused();
     }
     else {
         std::cout << "play" << std::endl;
-        glWidget->play("/home/stephen/Videos/news.mp4");
+
+        std::function<void(const avio::Frame& frame)> renderCallback = [&](const avio::Frame& frame)
+        {
+            std::cout << "renderCallback start" << std::endl;
+            if (!frame.isValid()) {
+                glWidget->emit infoMessage("render callback recvd invalid Frame");
+                return;
+            }
+            glWidget->mutex.lock();
+            glWidget->f = frame;
+            glWidget->img = QImage(glWidget->f.m_frame->data[0], glWidget->f.m_frame->width,
+                                glWidget->f.m_frame->height, QImage::Format_RGB888);
+            glWidget->mutex.unlock();
+            glWidget->update();
+            std::cout << "renderCallback finish" << std::endl;
+        };
+
+        std::function<void(float)> progressCallback = [&](float arg) 
+        {
+            progress->setProgress(arg);
+        };
+
+        //glWidget->play(uri);
+        player = new avio::Player();
+        player->width = [&]() { return glWidget->width(); };
+        player->height = [&]() { return glWidget->height(); };
+        player->uri = uri;
+        player->hWnd = glWidget->winId();
+        //player->renderCallback = renderCallback;
+        player->progressCallback = [&](float arg) { progress->setProgress(arg); };
+        player->cbMediaPlayingStarted = [&](int64_t duration) { mediaPlayingStarted(duration); };
+        player->cbMediaPlayingStopped = [&]() { mediaPlayingStopped(); };
+        player->start();
+        //while (player->running) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
     }
     setPlayButton();
 }
@@ -93,7 +127,7 @@ void MainWindow::onBtnPlayClicked()
 void MainWindow::onBtnStopClicked()
 {
     std::cout << "stop" << std::endl;
-    glWidget->stop();
+    player->running = false;
     setPlayButton();
     setRecordButton();
 }
@@ -123,13 +157,13 @@ void MainWindow::mediaPlayingStopped()
 {
     std::cout << "MainWindow::mediaPlayingStopped" << std::endl;
     progress->setProgress(0);
+    player = nullptr;
     setPlayButton();
     setRecordButton();
 }
 
 void MainWindow::mediaProgress(float arg)
 {
-    //sldProgress->setValue(std::round(sldProgress->maximum() * arg));
     progress->setProgress(arg);
 }
 

@@ -135,14 +135,12 @@ std::cout << "test 1" << std::endl;
         Queue<Packet> apq_reader;
         Queue<Frame>  afq_decoder;
         Queue<Frame>  afq_filter;
-std::cout << "test 2" << std::endl;    
 
         reader = new Reader(uri.c_str());
         reader->showStreamParameters();
         const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(reader->pix_fmt());
         if (!desc) throw avio::Exception("No pixel format in video stream");
 
-std::cout << "test 3" << std::endl;    
         if (reader->has_video()) {
             reader->vpq = &vpq_reader;
 
@@ -155,7 +153,6 @@ std::cout << "test 3" << std::endl;
             videoFilter->frame_out_q = &vfq_filter;
         }
 
-std::cout << "test 4" << std::endl;    
         if (reader->has_audio()) {
             reader->apq = &apq_reader;
 
@@ -168,7 +165,6 @@ std::cout << "test 4" << std::endl;
             audioFilter->frame_out_q = &afq_filter;
         }
 
-std::cout << "test 5" << std::endl;    
         if(checkForStreamHeader(uri.c_str())) {
             if (vpq_size) reader->apq_max_size = vpq_size;
             if (apq_size) reader->vpq_max_size = vpq_size;
@@ -180,7 +176,6 @@ std::cout << "test 5" << std::endl;
         if (audioDecoder) ops.push_back(new std::thread(decode, audioDecoder));
         if (audioFilter)  ops.push_back(new std::thread(filter, audioFilter));
 
-std::cout << "test 6" << std::endl;    
         display = new Display(*reader);
         if (videoFilter) display->vfq_in = videoFilter->frame_out_q;
         if (audioFilter) display->afq_in = audioFilter->frame_out_q;
@@ -193,7 +188,6 @@ std::cout << "test 6" << std::endl;
         running = false;
 
         std::cout << "display done" << std::endl;
-std::cout << "test 7" << std::endl;    
     }
     catch (const Exception e) {
         if (errorCallback) {

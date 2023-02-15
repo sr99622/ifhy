@@ -114,42 +114,8 @@ class MainWindow(QMainWindow):
             self.player.height = lambda : self.avWidget.height()
             self.player.uri = "/home/stephen/Videos/news.mp4"
             self.player.hWnd = self.avWidget.winId()
-            '''
-            if platform.system() == "Linux":
-                self.reader = avio.Reader("/home/stephen/Videos/news.mp4")
-            else:
-                self.reader = avio.Reader("C:/Users/sr996/Videos/news.mp4")
-            self.avWidget.duration = self.reader.duration()
-
-            if platform.system() == "Linux":
-                self.videoDecoder = avio.Decoder(self.reader, avio.AVMEDIA_TYPE_VIDEO, avio.AV_HWDEVICE_TYPE_VDPAU)
-            else:
-                self.videoDecoder = avio.Decoder(self.reader, avio.AVMEDIA_TYPE_VIDEO, avio.AV_HWDEVICE_TYPE_CUDA)
-
-            #videoFilter = avio.Filter(videoDecoder, "scale=1280x720,format=rgb24")
-            self.videoFilter = avio.Filter(self.videoDecoder, "null")
-
-            self.audioDecoder = avio.Decoder(self.reader, avio.AVMEDIA_TYPE_AUDIO)
-
-            self.audioFilter = avio.Filter(self.audioDecoder, "anull")
-
-            self.display = avio.Display(self.reader)
-
-            self.display.progressCallback = lambda n: self.updateProgress(n)
-            #self.display.renderCallback = lambda f: self.avWidget.renderCallback(f)
-            self.display.hWnd = self.avWidget.winId()
-            print("widget width: ", self.avWidget.width(), " height: ", self.avWidget.height())
-
-            self.display.pythonCallback = lambda f: self.pythonCallback(f)
-
-            self.player.add_reader(self.reader)
-            self.player.add_decoder(self.videoDecoder)
-            self.player.add_filter(self.videoFilter)
-            self.player.add_decoder(self.audioDecoder)
-            self.player.add_filter(self.audioFilter)
-            self.player.add_display(self.display)
-            '''
             self.player.start()
+
         except Exception as e:
             print(e)
 

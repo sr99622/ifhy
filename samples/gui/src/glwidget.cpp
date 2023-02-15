@@ -15,7 +15,9 @@ GLWidget::~GLWidget()
 
 void GLWidget::paintEvent(QPaintEvent* event)
 {
+    std::cout << "paintEvent start" << std::endl;
     QOpenGLWidget::paintEvent(event);
+    /*
     QPainter painter;
     painter.begin(this);
     if (!img.isNull()) {
@@ -27,6 +29,8 @@ void GLWidget::paintEvent(QPaintEvent* event)
         mutex.unlock();
     }
     painter.end();
+    */
+    std::cout << "paintEvent finish" << std::endl;
 }
 
 void GLWidget::stop()

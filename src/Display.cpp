@@ -270,8 +270,8 @@ bool Display::display()
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             } while (std::chrono::high_resolution_clock::now() < end);
 
-            if (renderCallback) {
-                renderCallback(f);
+            if (P->renderCallback) {
+                P->renderCallback(f);
             }
             else {
                 pix_width = f.m_frame->width;
@@ -282,10 +282,10 @@ bool Display::display()
             }
             reader->last_video_pts = f.m_frame->pts;
 
-            if (progressCallback) {
+            if (P->progressCallback) {
                 if (reader->duration()) {
                     float pct = (float)f.m_rts / (float)reader->duration();
-                    progressCallback(pct);
+                    P->progressCallback(pct);
                 }
             }
 

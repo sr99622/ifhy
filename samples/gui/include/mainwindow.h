@@ -9,6 +9,15 @@
 #include "glwidget.h"
 #include "progress.h"
 
+class Label : public QLabel
+{
+    Q_OBJECT
+
+    QSize sizeHint() const{
+        return QSize(640, 480);
+    }
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -25,6 +34,8 @@ public:
     QPushButton* btnRecord;
     Progress* progress;
     GLWidget* glWidget;
+    avio::Player* player = nullptr;
+    const char* uri;
 
 protected:
     void closeEvent(QCloseEvent* event) override;
