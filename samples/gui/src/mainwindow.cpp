@@ -148,18 +148,18 @@ void MainWindow::closeEvent(QCloseEvent* event)
 void MainWindow::mediaPlayingStarted(qint64 duration)
 {
     std::cout << "MainWindow::mediaPlayingStarted" << std::endl;
-    progress->setDuration(duration);
-    setPlayButton();
-    setRecordButton();
+    //progress->setDuration(duration);
+    //setPlayButton();
+    //setRecordButton();
 }
 
 void MainWindow::mediaPlayingStopped()
 {
     std::cout << "MainWindow::mediaPlayingStopped" << std::endl;
-    progress->setProgress(0);
+    //progress->setProgress(0);
     player = nullptr;
-    setPlayButton();
-    setRecordButton();
+    //setPlayButton();
+    //setRecordButton();
 }
 
 void MainWindow::mediaProgress(float arg)
