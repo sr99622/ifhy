@@ -16,9 +16,6 @@ GLWidget::~GLWidget()
 
 void GLWidget::paintEvent(QPaintEvent* event)
 {
-    //QOpenGLWidget::paintEvent(event);
-
-    std::cout << "paint event start" << std::endl;
     if (f.isValid()) {
         mutex.lock();
         QPainter painter;
@@ -31,12 +28,13 @@ void GLWidget::paintEvent(QPaintEvent* event)
         painter.end();
         mutex.unlock();
     }
-    std::cout << "paint event finish" << std::endl;
+    else {
+        QOpenGLWidget::paintEvent(event);
+    }
 }
 
 void GLWidget::renderCallback(const avio::Frame& frame)
 {
-    std::cout << "render callback start" << std::endl;
     if (!frame.isValid()) {
         std:: cout << "render callback recvd invalid Frame" << std::endl;
         return;
@@ -45,7 +43,6 @@ void GLWidget::renderCallback(const avio::Frame& frame)
     f = frame;
     mutex.unlock();
     update();
-    std::cout << "render callback finish" << std::endl;
 }
 
 QSize GLWidget::sizeHint() const
