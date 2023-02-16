@@ -228,8 +228,11 @@ bool Display::display()
                     }
                 }
 
-                if (!renderCallback) {
+                if (!P->renderCallback) {
                     videoPresentation();
+                }
+                else {
+                    P->renderCallback(f);
                 }
 
                 //SDL_Delay(SDL_EVENT_LOOP_WAIT);
@@ -261,8 +264,10 @@ bool Display::display()
             //if (pythonCallback) pythonCallback(f);
 
             int delay = rtClock.update(f.m_rts - reader->start_time());
+            std::this_thread::sleep_for(std::chrono::milliseconds(delay));
             //SDL_Delay(delay);
 
+            /*
             auto start = std::chrono::high_resolution_clock::now();
             std::chrono::milliseconds ms(delay);
             auto end = start + ms;
@@ -270,6 +275,7 @@ bool Display::display()
                 std::this_thread::yield();
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             } while (std::chrono::high_resolution_clock::now() < end);
+            */
 
             if (P->renderCallback) {
                 P->renderCallback(f);
@@ -415,7 +421,8 @@ void Display::AudioCallback(void* userdata, uint8_t* audio_buffer, int len)
                     swr_convert(d->swr_ctx, &d->swr_buffer, nb_samples, data, nb_samples);
                     int mark = std::min(len, d->swr_buffer_size);
                     //int mark = min(len, d->swr_buffer_size);
-                    memcpy(temp + ptr, d->swr_buffer, mark);
+                    if (((Player*)(d->player))->running) memcpy(temp + ptr, d->swr_buffer, mark);
+                    //memcpy(temp + ptr, d->swr_buffer, mark);
                     ptr += mark;
                     len -= mark;
                 }

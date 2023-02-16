@@ -81,7 +81,6 @@ void MainWindow::setRecordButton()
 
 void MainWindow::onBtnPlayClicked()
 {
-    bool winDraw = false;
     std::cout << "onBtnPlayClicked" << std::endl;
     if (player) {
         player->togglePaused();
@@ -91,13 +90,12 @@ void MainWindow::onBtnPlayClicked()
         player->width = [&]() { return glWidget->width(); };
         player->height = [&]() { return glWidget->height(); };
         player->uri = uri;
-        if (winDraw) {
-            player->hWnd = glWidget->winId();
-        }
-        else {
-            player->video_filter = "format=rgb24";
-            player->renderCallback = [&](const avio::Frame& frame) { glWidget->renderCallback(frame); };
-        }
+#ifdef _WIN32        
+        player->hWnd = glWidget->winId();
+#else
+        player->video_filter = "format=rgb24";
+        player->renderCallback = [&](const avio::Frame& frame) { glWidget->renderCallback(frame); };
+#endif
         player->progressCallback = [&](float arg) { progress->setProgress(arg); };
         player->cbMediaPlayingStarted = [&](int64_t duration) { mediaPlayingStarted(duration); };
         player->cbMediaPlayingStopped = [&]() { mediaPlayingStopped(); };
@@ -110,7 +108,10 @@ void MainWindow::onBtnPlayClicked()
 void MainWindow::onBtnStopClicked()
 {
     std::cout << "stop" << std::endl;
-    if (player) player->running = false;
+    if (player) {
+        player->running = false;
+        if (player->isPaused()) player->togglePaused();
+    }
     //setPlayButton();
     //setRecordButton();
 }

@@ -92,7 +92,7 @@ void Player::twink(void* caller)
 
 void Player::start()
 {
-    std::thread process_thread(twink, this);
+    std::thread process_thread([&]() { run(); });
     process_thread.detach();
 }
 
