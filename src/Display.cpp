@@ -243,6 +243,7 @@ bool Display::display()
             if (vfq_in) {
                 vfq_in->pop_move(f);
                 if (!f.isValid()) {
+                    std::cout << "recvd null frame" << std::endl;
                     playing = false;
                     break;
                 }
@@ -428,6 +429,7 @@ void Display::AudioCallback(void* userdata, uint8_t* audio_buffer, int len)
                         event.type = SDL_QUIT;
                         SDL_PushEvent(&event);
                     }
+                    std::cout << "audio display done" << std::endl;
                     return;
                 }
             }

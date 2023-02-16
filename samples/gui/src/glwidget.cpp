@@ -16,9 +16,11 @@ GLWidget::~GLWidget()
 
 void GLWidget::paintEvent(QPaintEvent* event)
 {
+    //QOpenGLWidget::paintEvent(event);
+
     std::cout << "paint event start" << std::endl;
-    mutex.lock();
     if (f.isValid()) {
+        mutex.lock();
         QPainter painter;
         painter.begin(this);
         QImage img = QImage(f.m_frame->data[0], f.m_frame->width, f.m_frame->height, QImage::Format_RGB888);
@@ -27,8 +29,8 @@ void GLWidget::paintEvent(QPaintEvent* event)
         int dy = height() - img.height();
         painter.drawImage(dx/2, dy/2, img);
         painter.end();
+        mutex.unlock();
     }
-    mutex.unlock();
     std::cout << "paint event finish" << std::endl;
 }
 
@@ -44,13 +46,6 @@ void GLWidget::renderCallback(const avio::Frame& frame)
     mutex.unlock();
     update();
     std::cout << "render callback finish" << std::endl;
-}
-
-void GLWidget::invalidateFrame()
-{
-    mutex.lock();
-    f = avio::Frame(nullptr);
-    mutex.unlock();
 }
 
 QSize GLWidget::sizeHint() const

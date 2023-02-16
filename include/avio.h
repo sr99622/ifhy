@@ -122,6 +122,7 @@ static void read(Reader* reader, Player* player)
         if (reader->apq) reader->apq->push_move(Packet(nullptr));
     }
     catch (const QueueClosedException& e) {}
+    std::cout << "reader finished" << std::endl;
 }
 
 static void decode(Decoder* decoder) 
@@ -136,8 +137,8 @@ static void decode(Decoder* decoder)
 
             decoder->decode(p.m_pkt);
         }
-        decoder->decode(nullptr);
-        decoder->flush();
+        //decoder->decode(nullptr);
+        //decoder->flush();
     }
     catch (const QueueClosedException& e) {}
     catch (const Exception& e) { 
@@ -147,7 +148,7 @@ static void decode(Decoder* decoder)
     }
 
     decoder->frame_q->push_move(Frame(nullptr));
-    //std::cout << decoder->strMediaType << " decoder finish: " << std::endl;
+    std::cout << decoder->strMediaType << " decoder finished" << std::endl;
 }
 
 static void filter(Filter* filter)
@@ -162,7 +163,7 @@ static void filter(Filter* filter)
 
             filter->filter(f);
         }
-        filter->frame_out_q->push_move(Frame(nullptr));
+        //filter->frame_out_q->push_move(Frame(nullptr));
     }
     catch (const Exception& e) {
         std::stringstream str;
@@ -170,7 +171,7 @@ static void filter(Filter* filter)
         if (filter->errorCallback) filter->errorCallback(str.str());
     }
     filter->frame_out_q->push_move(Frame(nullptr));
-    //std::cout << "filter finished" << std::endl;
+    std::cout << filter->strMediaType() << " filter finished" << std::endl;
 }
 
 

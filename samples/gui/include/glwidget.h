@@ -15,7 +15,6 @@ public:
     ~GLWidget();
     void renderCallback(const avio::Frame& frame);
     QSize sizeHint() const override;
-    void invalidateFrame();
 
     avio::Frame f;
     QMutex mutex;

@@ -70,33 +70,6 @@ void Player::key_event(int keyCode)
     SDL_PushEvent(&event);
 }
 
-void Player::add_reader(Reader& reader_in)
-{
-    reader = &reader_in;
-}
-
-void Player::add_decoder(Decoder& decoder_in)
-{
-    if (decoder_in.mediaType == AVMEDIA_TYPE_VIDEO)
-        videoDecoder = &decoder_in;
-    if (decoder_in.mediaType == AVMEDIA_TYPE_AUDIO)
-        audioDecoder = &decoder_in;
-}
-
-void Player::add_filter(Filter& filter_in)
-{
-    if (filter_in.mediaType() == AVMEDIA_TYPE_VIDEO)
-        videoFilter = &filter_in;
-    if (filter_in.mediaType() == AVMEDIA_TYPE_AUDIO)
-        audioFilter = &filter_in;
-}
-
-void Player::add_display(Display& display_in)
-{
-    display_in.player = (void*)this;
-    display = &display_in;
-}
-
 bool Player::checkForStreamHeader(const char* name)
 {
     /*
@@ -125,16 +98,15 @@ void Player::start()
 
 void Player::run()
 {
-std::cout << "test 1" << std::endl;    
     try {
         running = true;
 
-        Queue<Packet> vpq_reader;
-        Queue<Frame>  vfq_decoder;
-        Queue<Frame>  vfq_filter;
-        Queue<Packet> apq_reader;
-        Queue<Frame>  afq_decoder;
-        Queue<Frame>  afq_filter;
+        vpq_reader  = new Queue<Packet>;
+        vfq_decoder = new Queue<Frame>;
+        vfq_filter  = new Queue<Frame>;
+        apq_reader  = new Queue<Packet>;
+        afq_decoder = new Queue<Frame>;
+        afq_filter  = new Queue<Frame>;
 
         reader = new Reader(uri.c_str());
         reader->showStreamParameters();
@@ -142,27 +114,27 @@ std::cout << "test 1" << std::endl;
         if (!desc) throw avio::Exception("No pixel format in video stream");
 
         if (reader->has_video()) {
-            reader->vpq = &vpq_reader;
+            reader->vpq = vpq_reader;
 
             videoDecoder = new Decoder(*reader, AVMEDIA_TYPE_VIDEO, hw_device_type);
-            videoDecoder->pkt_q = &vpq_reader;
-            videoDecoder->frame_q = &vfq_decoder;
+            videoDecoder->pkt_q = vpq_reader;
+            videoDecoder->frame_q = vfq_decoder;
 
             videoFilter = new Filter(*videoDecoder, video_filter.c_str());
-            videoFilter->frame_in_q = &vfq_decoder;
-            videoFilter->frame_out_q = &vfq_filter;
+            videoFilter->frame_in_q = vfq_decoder;
+            videoFilter->frame_out_q = vfq_filter;
         }
 
         if (reader->has_audio()) {
-            reader->apq = &apq_reader;
+            reader->apq = apq_reader;
 
             audioDecoder = new Decoder(*reader, AVMEDIA_TYPE_AUDIO);
-            audioDecoder->pkt_q = &apq_reader;
-            audioDecoder->frame_q = &afq_decoder;
+            audioDecoder->pkt_q = apq_reader;
+            audioDecoder->frame_q = afq_decoder;
 
             audioFilter = new Filter(*audioDecoder, audio_filter.c_str());
-            audioFilter->frame_in_q = &afq_decoder;
-            audioFilter->frame_out_q = &afq_filter;
+            audioFilter->frame_in_q = afq_decoder;
+            audioFilter->frame_out_q = afq_filter;
         }
 
         if(checkForStreamHeader(uri.c_str())) {
@@ -178,8 +150,10 @@ std::cout << "test 1" << std::endl;
 
         display = new Display(*reader);
         if (videoFilter) display->vfq_in = videoFilter->frame_out_q;
-        if (audioFilter) display->afq_in = audioFilter->frame_out_q;
-        if (audioFilter) display->initAudio(audioFilter);
+        if (audioFilter) {
+            display->afq_in = audioFilter->frame_out_q;
+            display->initAudio(audioFilter);
+        }
         display->player = this;
         display->hWnd = hWnd;
 
@@ -197,19 +171,16 @@ std::cout << "test 1" << std::endl;
         }
     }
 
-    std::cout << "test 2" << std::endl;
     if (reader) {
         if (reader->vpq) reader->vpq->close();
         if (reader->apq) reader->apq->close();
     }
 
-    std::cout << "test 3" << std::endl;
     for (int i = 0; i < ops.size(); i++) {
         ops[i]->join();
         delete ops[i];
     }
 
-    std::cout << "test 4" << std::endl;
     if (reader)       delete reader;
     if (videoFilter)  delete videoFilter;
     if (videoDecoder) delete videoDecoder;
@@ -217,7 +188,16 @@ std::cout << "test 1" << std::endl;
     if (audioDecoder) delete audioDecoder;
     if (display)      delete display;
 
-    std::cout << "test 5" << std::endl;
-    if (cbMediaPlayingStopped) cbMediaPlayingStopped();}
+    delete  vpq_reader;
+    delete  vfq_decoder;
+    delete  vfq_filter;
+    delete  apq_reader;
+    delete  afq_decoder;
+    delete  afq_filter;
+
+    if (cbMediaPlayingStopped) cbMediaPlayingStopped();
+
+
+}
 
 }

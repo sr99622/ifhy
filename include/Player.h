@@ -46,6 +46,13 @@ public:
     Filter*   audioFilter  = nullptr;
     Display*  display      = nullptr;
 
+    Queue<Packet>* vpq_reader;
+    Queue<Frame>*  vfq_decoder;
+    Queue<Frame>*  vfq_filter;
+    Queue<Packet>* apq_reader;
+    Queue<Frame>*  afq_decoder;
+    Queue<Frame>*  afq_filter;
+
     std::vector<std::thread*> ops;
 
     std::function<int(void)> width = nullptr;
@@ -83,10 +90,6 @@ public:
     void seek(float arg);
     void toggle_pipe_out(const std::string& filename);
     void key_event(int keyCode);
-    void add_reader(Reader& reader_in);
-    void add_decoder(Decoder& decoder_in);
-    void add_filter(Filter& filter_in);
-    void add_display(Display& display_in);
     void clear_queues();
     void clear_decoders();
     //void cleanup();

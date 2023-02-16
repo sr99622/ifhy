@@ -34,7 +34,7 @@ public:
     QPushButton* btnRecord;
     Progress* progress;
     GLWidget* glWidget;
-    avio::Player player;
+    avio::Player* player = nullptr;
     bool playing = false;
     const char* uri;
 
@@ -48,6 +48,7 @@ public slots:
     void onBtnPlayClicked();
     void onBtnStopClicked();
     void onBtnRecordClicked();
+    void seek(float);
     void mediaPlayingStarted(qint64);
     void mediaPlayingStopped();
     void mediaProgress(float);

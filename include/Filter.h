@@ -47,6 +47,7 @@ public:
 	void close();
 	void filter(Frame& f);
 	AVMediaType mediaType() { return decoder->mediaType; }
+	std::string strMediaType() const { return decoder->strMediaType; }
 
 	//void* process = nullptr;
 	std::function<void(const std::string&)> infoCallback = nullptr;
