@@ -3,7 +3,7 @@
 
 #include <QOpenGLWidget>
 #include <QMutex>
-#include <QPaintEvent>
+#include <QRect>
 #include "avio.h"
 
 class GLWidget : public QOpenGLWidget
@@ -15,12 +15,13 @@ public:
     ~GLWidget();
     void renderCallback(const avio::Frame& frame);
     QSize sizeHint() const override;
+    QRect getImageRect(const QImage& img) const;
 
     avio::Frame f;
     QMutex mutex;
 
 protected:
-    void paintEvent(QPaintEvent* event) override;
+    void paintGL() override;
 
 };
 

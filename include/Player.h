@@ -79,6 +79,9 @@ public:
     int vpq_size = 0;
     int apq_size = 0;
 
+    bool disable_video = false;
+    bool disable_audio = false;
+
     Player() { av_log_set_level(AV_LOG_PANIC); }
     ~Player() { }
 
@@ -92,10 +95,8 @@ public:
     void key_event(int keyCode);
     void clear_queues();
     void clear_decoders();
-    //void cleanup();
     void run();
     void start();
-    static void twink(void* caller);
     bool checkForStreamHeader(const char* name);
 
 };

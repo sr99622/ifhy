@@ -32,10 +32,12 @@ public:
     QPushButton* btnPlay;
     QPushButton* btnStop;
     QPushButton* btnRecord;
+    QPushButton* btnMute;
+    QSlider* sldVolume;
     Progress* progress;
     GLWidget* glWidget;
     avio::Player* player = nullptr;
-    bool playing = false;
+    bool mute = false;
     const char* uri;
 
 protected:
@@ -48,6 +50,8 @@ public slots:
     void onBtnPlayClicked();
     void onBtnStopClicked();
     void onBtnRecordClicked();
+    void onBtnMuteClicked();
+    void onSldVolumeChanged(int);
     void seek(float);
     void mediaPlayingStarted(qint64);
     void mediaPlayingStopped();

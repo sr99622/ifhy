@@ -17,13 +17,23 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     connect(btnRecord, SIGNAL(clicked()), this, SLOT(onBtnRecordClicked()));
     btnRecord->setEnabled(false);
 
+    btnMute = new QPushButton("Mute");
+    connect(btnMute, SIGNAL(clicked()), this, SLOT(onBtnMuteClicked()));
+
+    sldVolume = new QSlider();
+    sldVolume->setValue(80);
+    sldVolume->setTracking(true);
+    connect(sldVolume, SIGNAL(valueChanged(int)), this, SLOT(onSldVolumeChanged(int)));
+
     QWidget* pnlControl = new QWidget();
     QGridLayout* lytControl = new QGridLayout(pnlControl);
     lytControl->addWidget(btnPlay,      0, 0, 1, 1, Qt::AlignCenter);
     lytControl->addWidget(btnStop,      1, 0, 1, 1, Qt::AlignCenter);
     lytControl->addWidget(btnRecord,    2, 0, 1, 1, Qt::AlignCenter);
-    lytControl->addWidget(new QLabel(), 3, 0, 1, 1);
-    lytControl->setRowStretch(3, 10);
+    lytControl->addWidget(sldVolume,    3, 0, 1, 1, Qt::AlignCenter);
+    lytControl->addWidget(btnMute,      4, 0, 1, 1, Qt::AlignCenter);
+    lytControl->addWidget(new QLabel(), 5, 0, 1, 1);
+    lytControl->setRowStretch(5, 10);
 
     progress = new Progress(this);
 
@@ -99,6 +109,8 @@ void MainWindow::onBtnPlayClicked()
         player->progressCallback = [&](float arg) { progress->setProgress(arg); };
         player->cbMediaPlayingStarted = [&](int64_t duration) { mediaPlayingStarted(duration); };
         player->cbMediaPlayingStopped = [&]() { mediaPlayingStopped(); };
+        player->setMute(mute);
+        player->setVolume(sldVolume->value());
         player->start();
 
     }
@@ -122,6 +134,24 @@ void MainWindow::onBtnRecordClicked()
     //if (glWidget->player)
     //    glWidget->player->toggle_pipe_out("test.webm");
     setRecordButton();
+}
+
+void MainWindow::onBtnMuteClicked()
+{
+    std::cout << "mute" << std::endl;
+    mute = !mute;
+    if (player)
+        player->setMute(mute);
+    if (mute)
+        btnMute->setText("UnMute");
+    else
+        btnMute->setText("Mute");
+}
+
+void MainWindow::onSldVolumeChanged(int arg)
+{
+    std::cout << "volume: " << arg << std::endl;
+    if (player) player->setVolume(arg);
 }
 
 void MainWindow::updateUI()

@@ -14,22 +14,26 @@ GLWidget::~GLWidget()
 
 }
 
-void GLWidget::paintEvent(QPaintEvent* event)
+QRect GLWidget::getImageRect(const QImage& img) const
+{
+    float ratio = std::min((float)width() / (float)img.width(), (float)height() / (float)img.height());
+    float w = (float)img.width() * ratio;
+    float h = (float)img.height() * ratio;
+    float x = ((float)width() - w) / 2.0f;
+    float y = ((float)height() - h) / 2.0f;
+    return QRect((int)x, (int)y, (int)w, (int)h);
+}
+
+void GLWidget::paintGL()
 {
     if (f.isValid()) {
         mutex.lock();
         QPainter painter;
         painter.begin(this);
         QImage img = QImage(f.m_frame->data[0], f.m_frame->width, f.m_frame->height, QImage::Format_RGB888);
-        img = img.scaled(width(), height(), Qt::KeepAspectRatio);
-        int dx = width() - img.width();
-        int dy = height() - img.height();
-        painter.drawImage(dx/2, dy/2, img);
+        painter.drawImage(getImageRect(img), img);
         painter.end();
         mutex.unlock();
-    }
-    else {
-        QOpenGLWidget::paintEvent(event);
     }
 }
 

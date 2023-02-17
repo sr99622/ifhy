@@ -21,6 +21,8 @@ PYBIND11_MODULE(avio, m)
         .def_readwrite("running", &Player::running)
         .def_readwrite("width", &Player::width)
         .def_readwrite("height", &Player::height)
+        .def_readwrite("disable_video", &Player::disable_video)
+        .def_readwrite("disable_audio", &Player::disable_audio)
         .def_readwrite("progressCallback", &Player::progressCallback)
         .def_readwrite("renderCallback", &Player::renderCallback)
         .def_readwrite("pythonCallback", &Player::pythonCallback)
@@ -119,7 +121,7 @@ PYBIND11_MODULE(avio, m)
         .def("frame_size", &Filter::frame_size)
         .def_readwrite("show_frames", &Filter::show_frames);
     py::class_<Display>(m, "Display")
-        .def(py::init<Reader&>())
+        .def(py::init<Reader*, void*>())
         .def("initVideo", &Display::initVideo)
 //        .def("pin_osd", &Display::pin_osd)
 //        .def("enable_status", &Display::enable_status)
@@ -137,10 +139,10 @@ PYBIND11_MODULE(avio, m)
         .def_readwrite("win_width", &Display::win_width)
         .def_readwrite("win_height", &Display::win_height)
         .def_readwrite("pix_fmt", &Display::pix_fmt)
-        .def_readwrite("fullscreen", &Display::fullscreen)
-        .def_readwrite("renderCallback", &Display::renderCallback)
-        .def_readwrite("progressCallback", &Display::progressCallback)
-        .def_readwrite("pythonCallback", &Display::pythonCallback);
+        .def_readwrite("fullscreen", &Display::fullscreen);
+        //.def_readwrite("renderCallback", &Display::renderCallback)
+        //.def_readwrite("progressCallback", &Display::progressCallback)
+        //.def_readwrite("pythonCallback", &Display::pythonCallback);
 /*
     py::class_<Pipe>(m, "Pipe")
         .def(py::init<Reader&>());

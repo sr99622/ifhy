@@ -5,30 +5,17 @@ import platform
 import cv2
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, \
 QGridLayout, QWidget, QSlider, QLabel
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtCore import Qt, QSize, QRect
 from PyQt6.QtGui import QPainter, QImage, QGuiApplication
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
 
-class AVWidget(QLabel):
-    def __init__(self, p):
+class AVWidget(QOpenGLWidget):
+    def __init__(self):
         super().__init__()
-        self.frame = avio.Frame()
-        #self.progress =  QSlider(Qt.Orientation.Horizontal)
         self.image = QImage()
-        self.duration = 0
-        self.player = p
-
+    
     def sizeHint(self):
         return QSize(640, 480)
-
-#    def resizeEvent(self, e):
-#        width = e.size().width()
-#        height = e.size().height()
-#        print("spontaneous: ", e.spontaneous())
-#        print("resizeEvent w: ", width, " h: ", height)
-#        if not e.spontaneous():
-#            self.player.width = e.size().width()
-#            self.player.height = e.size().height()
 
     def renderCallback(self, f):
         ary = np.array(f, copy = False)
@@ -36,22 +23,31 @@ class AVWidget(QLabel):
         self.image = QImage(ary.data, w, h, d * w, QImage.Format.Format_RGB888)
         self.update()
 
-    #def paintGL(self):
-    def paintEvent(self, e):
+    def getImageRect(self):
+        ratio = min(self.width() / self.image.width(), self.height() / self.image.height())
+        width = self.image.width() * ratio
+        height = self.image.height() * ratio
+        x = (self.width() - width) / 2
+        y = (self.height() - height) / 2
+        return QRect(int(x), int(y), int(width), int(height))
+
+    def paintGL(self):
         if (not self.image.isNull()):
             painter = QPainter(self)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            tmp = self.image.scaled(self.width(), self.height(), Qt.AspectRatioMode.KeepAspectRatio)
-            dx = self.width() - tmp.width()
-            dy = self.height() - tmp.height()
-            painter.drawImage(int(dx/2), int(dy/2), tmp)
+            painter.drawImage(self.getImageRect(), self.image)
+
+    def clear(self):
+        self.image.fill(0)
+        self.update()
 
 class MainWindow(QMainWindow):
 
-    def __init__(self):
+    def __init__(self, filename):
         super().__init__()
         self.setWindowTitle("avio")
         self.count = 0
+        self.uri = filename
         self.player = avio.Player()
 
         self.btnPlay = QPushButton("play")
@@ -63,7 +59,7 @@ class MainWindow(QMainWindow):
         self.btnStop = QPushButton("stop")
         self.btnStop.clicked.connect(self.btnStopClicked)
 
-        self.avWidget = AVWidget(self.player)
+        self.avWidget = AVWidget()
         self.progress = QSlider(Qt.Orientation.Horizontal)
 
         pnlMain = QWidget()
@@ -84,9 +80,7 @@ class MainWindow(QMainWindow):
 
     def pythonCallback(self, f):
         img = np.array(f, copy = False)
-
         cv2.rectangle(img, (500, 600), (900, 800), (0, 255, 0), 5)
-
         return f
 
     def updateProgress(self, n):
@@ -101,19 +95,26 @@ class MainWindow(QMainWindow):
         print("btnStopClicked")
         self.player.running = False
 
+    def mediaPlayingStopped(self):
+        self.avWidget.clear()
 
     def btnPlayClicked(self):
         try:
-            print("btnPlay clicked")
+            print("btnPlay")
             if self.player.running:
                 return
 
-            self.player = avio.Player()
-            self.avWidget.player = self.player
+            self.player.uri = self.uri
             self.player.width = lambda : self.avWidget.width()
             self.player.height = lambda : self.avWidget.height()
-            self.player.uri = "/home/stephen/Videos/news.mp4"
-            self.player.hWnd = self.avWidget.winId()
+            #self.player.hWnd = self.avWidget.winId()
+            self.player.video_filter = "format=rgb24"
+            self.player.renderCallback = lambda f : self.avWidget.renderCallback(f)
+            self.player.pythonCallback = lambda f : self.pythonCallback(f)
+            self.player.cbMediaPlayingStopped = lambda : self.mediaPlayingStopped()
+
+            #self.player.disable_video = True
+            self.player.hw_device_type = avio.AV_HWDEVICE_TYPE_VDPAU
             self.player.start()
 
         except Exception as e:
@@ -122,9 +123,14 @@ class MainWindow(QMainWindow):
 if __name__ == '__main__':
 
     print(platform.system())
-    app = QApplication(sys.argv)
 
-    window = MainWindow()
-    window.show()
+    if len(sys.argv) < 2:
+        print("please specify media filename in command line")
+    else:
 
-    app.exec()
+        print(sys.argv[1])
+        app = QApplication(sys.argv)
+        window = MainWindow(sys.argv[1])
+        window.show()
+
+        app.exec()

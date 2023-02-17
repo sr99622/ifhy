@@ -62,7 +62,6 @@ static void read(Reader* reader, Player* player)
             }
 
             if (reader->seek_target_pts != AV_NOPTS_VALUE) {
-                std::cout << "seek_target_pts" << std::endl;
                 AVPacket* tmp = reader->seek();
                 reader->clear_pkts_cache(0);
                 if (tmp) {
@@ -171,6 +170,7 @@ static void filter(Filter* filter)
         str << "filter loop exception: " << e.what();
         if (filter->errorCallback) filter->errorCallback(str.str());
     }
+
     filter->frame_out_q->push_move(Frame(nullptr));
     //std::cout << filter->strMediaType() << " filter finished" << std::endl;
 }
