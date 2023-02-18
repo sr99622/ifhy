@@ -4,15 +4,17 @@ import numpy as np
 import platform
 import cv2
 from time import sleep
+from datetime import timedelta
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, \
 QGridLayout, QWidget, QSlider, QLabel, QMessageBox
 from PyQt6.QtCore import Qt, QSize, QRect, pyqtSignal, QObject
-from PyQt6.QtGui import QPainter, QImage, QGuiApplication
+from PyQt6.QtGui import QPainter, QImage, QFont, QFontMetrics
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
 
 class Signals(QObject):
     error = pyqtSignal(str)
     progress = pyqtSignal(int)
+    starting = pyqtSignal(str)
 
 class AVWidget(QOpenGLWidget):
     def __init__(self):
@@ -46,6 +48,15 @@ class AVWidget(QOpenGLWidget):
         self.image.fill(0)
         self.update()
 
+class Slider(QSlider):
+    def __init__(self, o, w):
+        super().__init__(o)
+        self.w = w
+
+    def mousePressEvent(self, e):
+        pct = e.position().x() / self.width()
+        self.w.player.seek(pct)
+
 class MainWindow(QMainWindow):
 
     def __init__(self, filename):
@@ -55,37 +66,58 @@ class MainWindow(QMainWindow):
         self.signals = Signals()
         self.signals.error.connect(self.showErrorDialog)
         self.signals.progress.connect(self.updateSlider)
+        self.signals.starting.connect(self.updateDuration)
 
         self.playing = False
+        self.duration = 0
         self.uri = filename
         self.player = avio.Player()
 
         self.btnPlay = QPushButton("play")
         self.btnPlay.clicked.connect(self.btnPlayClicked)
-
         self.btnPause = QPushButton("pause")
         self.btnPause.clicked.connect(self.btnPauseClicked)
-
         self.btnStop = QPushButton("stop")
         self.btnStop.clicked.connect(self.btnStopClicked)
-
-        self.btnTest = QPushButton("test")
-        self.btnTest.clicked.connect(self.btnTestClicked)
+        pnlControl = QWidget()
+        lytControl = QGridLayout(pnlControl)
+        lytControl.addWidget(self.btnPlay,    0, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
+        lytControl.addWidget(self.btnPause,   1, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
+        lytControl.addWidget(self.btnStop,    2, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
 
         self.avWidget = AVWidget()
-        self.progress = QSlider(Qt.Orientation.Horizontal)
-        self.progress.setMaximum(1000)
+        
+        self.sldProgress = Slider(Qt.Orientation.Horizontal, self)
+        self.sldProgress.setMaximum(1000)
+        self.lblProgress = QLabel("0:00")
+        self.setLabelWidth(self.lblProgress)
+        self.lblDuration = QLabel("0:00")
+        self.setLabelWidth(self.lblDuration)
+        pnlProgress = QWidget()
+        lytProgress = QGridLayout(pnlProgress)
+        lytProgress.addWidget(self.lblProgress,  0, 0, 1, 1)
+        lytProgress.addWidget(self.sldProgress,  0, 1, 1, 1)
+        lytProgress.addWidget(self.lblDuration,  0, 2, 1, 1)
+        lytProgress.setContentsMargins(0, 0, 0, 0)
+        lytProgress.setColumnStretch(1, 10)
 
         pnlMain = QWidget()
         lytMain = QGridLayout(pnlMain)
-        lytMain.addWidget(self.avWidget,           0, 0, 6, 1)
-        lytMain.addWidget(self.progress,           6, 0, 1, 1)
-        lytMain.addWidget(self.btnPlay,            0, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        lytMain.addWidget(self.btnPause,           1, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        lytMain.addWidget(self.btnStop,            2, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        lytMain.addWidget(self.btnTest,            3, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
+        lytMain.addWidget(self.avWidget,   0, 0, 1, 1)
+        lytMain.addWidget(pnlProgress,     1, 0, 1, 1)
+        lytMain.addWidget(pnlControl,      0, 1, 2, 1)
+        lytMain.setColumnStretch(0, 10)
+        lytMain.setRowStretch(0, 10)
 
         self.setCentralWidget(pnlMain)
+
+    def setLabelWidth(self, l):
+        font = QFont("Arial")
+        l.setFont(font)
+        metrics = l.fontMetrics()
+        rect = metrics.boundingRect("00:00:00")
+        l.setFixedWidth(rect.width())
+        l.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     def closeEvent(self, e):
         print(e)
@@ -99,12 +131,11 @@ class MainWindow(QMainWindow):
         return F
 
     def updateSlider(self, n):
-        self.progress.setValue(n)
-        self.progress.update()
+        self.sldProgress.setValue(n)
+        self.lblProgress.setText(self.timestring(int(self.duration * n / 1000)))
 
     def progressCallback(self, f):
-        print("progressCallback", f)
-        self.signals.progress.emit(int(f * self.progress.maximum()))
+        self.signals.progress.emit(int(f * self.sldProgress.maximum()))
 
     def btnPauseClicked(self):
         print("btnPauseClicked")
@@ -113,9 +144,6 @@ class MainWindow(QMainWindow):
     def btnStopClicked(self):
         print("btnStopClicked")
         self.player.running = False
-
-    def btnTestClicked(self):
-        print("this is a test")
 
     def showErrorDialog(self, s):
         msgBox = QMessageBox(self)
@@ -129,6 +157,26 @@ class MainWindow(QMainWindow):
         print("mediaPlayingStopped")
         self.avWidget.clear()
         self.playing = False
+
+    def updateDuration(self, str):
+        self.lblDuration.setText(str)
+
+    def timestring(self, n):
+        time_interval = int(n / 1000)
+        hours = int(time_interval / 3600)
+        minutes = int ((time_interval - (hours * 3600)) / 60)
+        seconds = int ((time_interval - (hours * 3600) - (minutes * 60)))
+        if hours > 0:
+            buf = "%02d:%02d:%02d" % (hours, minutes, seconds)
+        else:
+            buf = "%d:%02d" % (minutes, seconds)
+        return buf
+
+    def mediaPlayingStarted(self, n):
+        print("mediaPlayingStarted", n)
+        print(self.timestring(n))
+        self.duration = n
+        self.signals.starting.emit(self.timestring(n))
 
     def errorCallback(self, s):
         self.signals.error.emit(s)
@@ -147,6 +195,7 @@ class MainWindow(QMainWindow):
         self.player.video_filter = "format=rgb24"
         self.player.renderCallback = lambda F : self.avWidget.renderCallback(F)
         self.player.pythonCallback = lambda F : self.pythonCallback(F)
+        self.player.cbMediaPlayingStarted = lambda n : self.mediaPlayingStarted(n)
         self.player.cbMediaPlayingStopped = lambda : self.mediaPlayingStopped()
         self.player.errorCallback = lambda s : self.errorCallback(s)
         #self.player.disable_video = True
