@@ -116,6 +116,7 @@ int Display::initVideo()
         std::stringstream str;
         str << "Display init video exception: " << e.what();
         if (errorCallback) errorCallback(str.str());
+        else std::cout << str.str() << std::endl;
         ret = -1;
     }
     
@@ -259,7 +260,11 @@ void Display::display()
             if (P->progressCallback) {
                 if (reader->duration()) {
                     float pct = (float)f.m_rts / (float)reader->duration();
-                    P->progressCallback(pct);
+                    int progress = (int)(1000 * pct);
+                    if (progress != P->last_progress) {
+                        P->progressCallback(pct);
+                        P->last_progress = progress;
+                    }
                 }
             }
 

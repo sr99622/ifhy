@@ -75,6 +75,7 @@ public:
     bool running = false;
     bool mute = false;
     int volume = 100;
+    int last_progress = 0;
 
     int vpq_size = 0;
     int apq_size = 0;

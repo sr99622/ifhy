@@ -42,19 +42,19 @@ AVPixelFormat get_hw_format(AVCodecContext* ctx, const AVPixelFormat* pix_fmts)
 namespace avio
 {
 
-Decoder::Decoder(Reader& reader, AVMediaType mediaType, AVHWDeviceType hw_device_type) : reader(&reader), mediaType(mediaType)
+Decoder::Decoder(Reader* reader, AVMediaType mediaType, AVHWDeviceType hw_device_type) : reader(reader), mediaType(mediaType)
 {
     try {
         const char* str = av_get_media_type_string(mediaType);
         strMediaType = (str ? str : "UNKNOWN MEDIA TYPE");
 
-        stream_index = av_find_best_stream(reader.fmt_ctx, mediaType, -1, -1, NULL, 0);
+        stream_index = av_find_best_stream(reader->fmt_ctx, mediaType, -1, -1, NULL, 0);
         if (stream_index < 0) {
             std::stringstream str;
             str << "Error opening stream, unable to find " << strMediaType << " stream";
             throw Exception(str.str());
         }
-        stream = reader.fmt_ctx->streams[stream_index];
+        stream = reader->fmt_ctx->streams[stream_index];
         dec = avcodec_find_decoder(stream->codecpar->codec_id);
 
         if (!dec) {
@@ -120,7 +120,7 @@ Decoder::Decoder(Reader& reader, AVMediaType mediaType, AVHWDeviceType hw_device
         close();
         std::stringstream str;
         str << "Decoder constructor exception: " << e.what();
-        throw Exception(str.str());
+        throw std::runtime_error(str.str());
     }
 }
 

@@ -119,10 +119,9 @@ void Player::run()
         if (reader->has_video() && !disable_video) {
             reader->vpq = vpq_reader;
 
-            videoDecoder = new Decoder(*reader, AVMEDIA_TYPE_VIDEO, hw_device_type);
+            videoDecoder = new Decoder(reader, AVMEDIA_TYPE_VIDEO, hw_device_type);
             videoDecoder->pkt_q = vpq_reader;
             videoDecoder->frame_q = vfq_decoder;
-
             videoFilter = new Filter(*videoDecoder, video_filter.c_str());
             videoFilter->frame_in_q = vfq_decoder;
             videoFilter->frame_out_q = vfq_filter;
@@ -131,7 +130,7 @@ void Player::run()
         if (reader->has_audio() && !disable_audio) {
             reader->apq = apq_reader;
 
-            audioDecoder = new Decoder(*reader, AVMEDIA_TYPE_AUDIO);
+            audioDecoder = new Decoder(reader, AVMEDIA_TYPE_AUDIO);
             audioDecoder->pkt_q = apq_reader;
             audioDecoder->frame_q = afq_decoder;
 
@@ -162,32 +161,32 @@ void Player::run()
         display->hWnd = hWnd;
 
         if (cbMediaPlayingStarted) cbMediaPlayingStarted(reader->duration());
-
         display->display();
         running = false;
-
         std::cout << "display done" << std::endl;
     }
-    catch (const Exception e) {
-        if (errorCallback) {
-            std::stringstream str;
-            str << "avio player error: " << e.what();
+    catch (const std::exception e) {
+        std::stringstream str;
+        str << "avio player error: " << e.what();
+        if (errorCallback)
             errorCallback(str.str());
-        }
+        else 
+            std::cout << str.str() << std::endl;
+        running = false;
     }
-
+    
     if (reader) {
         if (reader->vpq) reader->vpq->close();
         if (reader->apq) reader->apq->close();
     }
 
-    reader_thread->join();
+    if (reader_thread) reader_thread->join();
     if (video_decoder_thread) video_decoder_thread->join();
     if (video_filter_thread)  video_filter_thread->join();
     if (audio_decoder_thread) audio_decoder_thread->join();
     if (audio_filter_thread)  audio_filter_thread->join();
 
-    delete reader_thread;
+    if (reader_thread) delete reader_thread;
     if (video_decoder_thread) delete video_decoder_thread;
     if (video_filter_thread)  delete video_filter_thread;
     if (audio_decoder_thread) delete audio_decoder_thread;
@@ -200,15 +199,15 @@ void Player::run()
     if (audioDecoder) delete audioDecoder;
     if (display)      delete display;
 
-    delete  vpq_reader;
-    delete  vfq_decoder;
-    delete  vfq_filter;
-    delete  apq_reader;
-    delete  afq_decoder;
-    delete  afq_filter;
+    if (vpq_reader)  delete  vpq_reader;  
+    if (vfq_decoder) delete  vfq_decoder;
+    if (vfq_filter)  delete  vfq_filter;
+    if (apq_reader)  delete  apq_reader;
+    if (afq_decoder) delete  afq_decoder;
+    if (afq_filter)  delete  afq_filter;
 
     if (cbMediaPlayingStopped) cbMediaPlayingStopped();
-
+    
 }
 
 }

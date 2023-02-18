@@ -92,8 +92,8 @@ PYBIND11_MODULE(avio, m)
             );
         });
     py::class_<Decoder>(m, "Decoder")
-        .def(py::init<Reader&, AVMediaType>())
-        .def(py::init<Reader&, AVMediaType, AVHWDeviceType>())
+        .def(py::init<Reader*, AVMediaType>())
+        .def(py::init<Reader*, AVMediaType, AVHWDeviceType>())
         .def("sample_rate", &Decoder::sample_rate)
         .def("channels", &Decoder::channels)
         .def("frame_size", &Decoder::frame_size)

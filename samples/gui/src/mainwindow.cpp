@@ -100,12 +100,12 @@ void MainWindow::onBtnPlayClicked()
         player->width = [&]() { return glWidget->width(); };
         player->height = [&]() { return glWidget->height(); };
         player->uri = uri;
-#ifdef _WIN32        
-        player->hWnd = glWidget->winId();
-#else
+//#ifdef _WIN32        
+//        player->hWnd = glWidget->winId();
+//#else
         player->video_filter = "format=rgb24";
         player->renderCallback = [&](const avio::Frame& frame) { glWidget->renderCallback(frame); };
-#endif
+//#endif
         player->progressCallback = [&](float arg) { progress->setProgress(arg); };
         player->cbMediaPlayingStarted = [&](int64_t duration) { mediaPlayingStarted(duration); };
         player->cbMediaPlayingStopped = [&]() { mediaPlayingStopped(); };

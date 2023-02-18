@@ -32,7 +32,7 @@ namespace avio
 class Decoder
 {
 public:
-	Decoder(Reader& reader, AVMediaType mediaType, AVHWDeviceType hw_device_type = AV_HWDEVICE_TYPE_NONE);
+	Decoder(Reader* reader, AVMediaType mediaType, AVHWDeviceType hw_device_type = AV_HWDEVICE_TYPE_NONE);
 
 	~Decoder();
 	int decode(AVPacket* pkt);
