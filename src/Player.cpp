@@ -40,7 +40,7 @@ void Player::seek(float arg)
     if (reader) reader->request_seek(arg);
 }
 
-void Player::toggle_pipe_out(const std::string& filename)
+void Player::togglePiping(const std::string& filename)
 {
     if (reader) {
         reader->pipe_out_filename = filename;

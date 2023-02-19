@@ -92,7 +92,7 @@ public:
     void setVolume(int arg);
     void togglePaused();
     void seek(float arg);
-    void toggle_pipe_out(const std::string& filename);
+    void togglePiping(const std::string& filename);
     void key_event(int keyCode);
     void clear_queues();
     void clear_decoders();
