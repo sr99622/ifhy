@@ -122,6 +122,7 @@ void Player::run()
             videoDecoder = new Decoder(reader, AVMEDIA_TYPE_VIDEO, hw_device_type);
             videoDecoder->pkt_q = vpq_reader;
             videoDecoder->frame_q = vfq_decoder;
+            
             videoFilter = new Filter(*videoDecoder, video_filter.c_str());
             videoFilter->frame_in_q = vfq_decoder;
             videoFilter->frame_out_q = vfq_filter;

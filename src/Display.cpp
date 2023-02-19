@@ -192,7 +192,8 @@ void Display::display()
             if (paused) 
             {
                 if (!P->running) {
-                    break;
+                    togglePause();
+                    continue;
                 }
 
                 f = paused_frame;

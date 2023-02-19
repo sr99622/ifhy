@@ -8,49 +8,16 @@ QGridLayout, QWidget, QSlider, QLabel, QMessageBox
 from PyQt6.QtCore import Qt, pyqtSignal, QObject, QPoint
 from PyQt6.QtGui import QPainter
 from glwidget import GLWidget
+from progress import Slider, Position, Progress
 
 sys.path.append("../../build")
 import avio
 
-class Slider(QSlider):
-    def __init__(self, o, w):
-        super().__init__(o)
-        self.setMouseTracking(True)
-        self.w = w
-
-    def leaveEvent(self, e):
-        self.w.lblPosition.setText("", 0)
-
-    def mousePressEvent(self, e):
-        pct = e.position().x() / self.width()
-        self.w.player.seek(pct)
-
-    def mouseMoveEvent(self, e):
-        if (self.w.playing):
-            x = e.position().x()
-            pct = x / self.width()
-            position = pct * self.w.duration
-            self.w.lblPosition.setText(self.w.timestring(int(position)), x)
-
-class Position(QLabel):
-    def __init__(self):
-        super().__init__()
-        self.pos = 0
-
-    def setText(self, s, n):
-        self.pos = n
-        super().setText(s)
-
-    def paintEvent(self, e):
-        painter = QPainter(self)
-        rect = self.fontMetrics().boundingRect(self.text())
-        x = min(self.width() - rect.width(), self.pos)
-        painter.drawText(QPoint(int(x), self.height()), self.text())
 
 class Signals(QObject):
     error = pyqtSignal(str)
-    progress = pyqtSignal(int)
-    starting = pyqtSignal(str)
+    progress = pyqtSignal(float)
+    starting = pyqtSignal(int)
     stopped = pyqtSignal()
 
 class MainWindow(QMainWindow):
@@ -58,12 +25,17 @@ class MainWindow(QMainWindow):
     def __init__(self, filename):
         super().__init__()
         self.setWindowTitle("avio")
+        self.showProgress = True
+
+        if self.showProgress:
+            self.progress = Progress(self)
 
         self.signals = Signals()
         self.signals.error.connect(self.showErrorDialog)
-        self.signals.progress.connect(self.updateSlider)
-        self.signals.starting.connect(self.updateDuration)
+        self.signals.starting.connect(self.playerStarted)
         self.signals.stopped.connect(self.playerStopped)
+        if self.showProgress:
+            self.signals.progress.connect(self.progress.updateProgress)
 
         self.playing = False
         self.closing = False
@@ -96,50 +68,21 @@ class MainWindow(QMainWindow):
 
         self.glWidget = GLWidget()
         
-        
-        self.sldProgress = Slider(Qt.Orientation.Horizontal, self)
-        self.sldProgress.setMaximum(1000)
-        self.lblProgress = QLabel("0:00")
-        self.setLabelWidth(self.lblProgress)
-        self.lblDuration = QLabel("0:00")
-        self.setLabelWidth(self.lblDuration)
-        self.lblPosition = Position()
-
-        pnlProgress = QWidget()
-        lytProgress = QGridLayout(pnlProgress)
-        lytProgress.addWidget(self.lblPosition,  0, 1, 1, 1)
-        lytProgress.addWidget(self.lblProgress,  1, 0, 1, 1)
-        lytProgress.addWidget(self.sldProgress,  1, 1, 1, 1)
-        lytProgress.addWidget(self.lblDuration,  1, 2, 1, 1)
-        lytProgress.setContentsMargins(0, 0, 0, 0)
-        lytProgress.setColumnStretch(1, 10)
-        
-
         pnlMain = QWidget()
         lytMain = QGridLayout(pnlMain)
         lytMain.addWidget(self.glWidget,   0, 0, 1, 1)
-        lytMain.addWidget(pnlProgress,     1, 0, 1, 1)
+        if self.showProgress:
+            lytMain.addWidget(self.progress,   1, 0, 1, 1)
         lytMain.addWidget(pnlControl,      0, 1, 2, 1)
         lytMain.setColumnStretch(0, 10)
         lytMain.setRowStretch(0, 10)
 
         self.setCentralWidget(pnlMain)
 
-    def setLabelWidth(self, l):
-        l.setFixedWidth(l.fontMetrics().boundingRect("00:00:00").width())
-        l.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
     def pythonCallback(self, F):
         img = np.array(F, copy = False)
         cv2.rectangle(img, (500, 600), (900, 800), (0, 255, 0), 5)
         return F
-
-    def updateSlider(self, n):
-        self.sldProgress.setValue(n)
-        self.lblProgress.setText(self.timestring(int(self.duration * n / 1000)))
-
-    def progressCallback(self, f):
-        self.signals.progress.emit(int(f * self.sldProgress.maximum()))
 
     def btnMuteClicked(self):
         print("btnMuteClicked")
@@ -171,9 +114,6 @@ class MainWindow(QMainWindow):
         msgBox.exec()
 
     def closeEvent(self, e):
-        print(e)
-        if self.player.isPaused():
-            self.player.togglePaused()
         self.closing = True
         self.player.running = False
         while self.playing:
@@ -182,46 +122,36 @@ class MainWindow(QMainWindow):
     def btnStopClicked(self):
         print("btnStopClicked")
         self.player.running = False
-        if self.player.isPaused():
-            self.player.togglePaused()
+
+    def playerStarted(self, n):
+        self.setPlayButton()
+        if self.showProgress:
+            self.progress.updateDuration(n)
 
     def playerStopped(self):
+        print("playerStopped")
         if not self.closing:
             self.glWidget.clear()
             self.setPlayButton()
             self.setRecordButton()
-            self.updateSlider(0)
-            self.duration = 0
-            self.lblDuration.setText("0:00")
+            if self.showProgress:
+                self.progress.updateProgress(0)
+                self.progress.updateDuration(0)
 
     def mediaPlayingStopped(self):
         print("mediaPlayingStopped")
         self.playing = False
         self.signals.stopped.emit()
 
-    def updateDuration(self, str):
-        self.lblDuration.setText(str)
-        self.setPlayButton()
-
-    def timestring(self, n):
-        time_interval = int(n / 1000)
-        hours = int(time_interval / 3600)
-        minutes = int ((time_interval - (hours * 3600)) / 60)
-        seconds = int ((time_interval - (hours * 3600) - (minutes * 60)))
-        if hours > 0:
-            buf = "%02d:%02d:%02d" % (hours, minutes, seconds)
-        else:
-            buf = "%d:%02d" % (minutes, seconds)
-        return buf
-
     def mediaPlayingStarted(self, n):
-        print("mediaPlayingStarted", n)
-        print(self.timestring(n))
-        self.duration = n
-        self.signals.starting.emit(self.timestring(n))
+        self.signals.starting.emit(n)
 
     def errorCallback(self, s):
         self.signals.error.emit(s)
+
+    def progressCallback(self, f):
+        if self.showProgress:
+            self.signals.progress.emit(f)
 
     def setPlayButton(self):
         if self.playing:
@@ -251,7 +181,6 @@ class MainWindow(QMainWindow):
             self.player.uri = self.uri
             self.player.width = lambda : self.glWidget.width()
             self.player.height = lambda : self.glWidget.height()
-            #self.player.hWnd = self.glWidget.winId()
             self.player.progressCallback = lambda f : self.progressCallback(f)
             self.player.video_filter = "format=rgb24"
             self.player.renderCallback = lambda F : self.glWidget.renderCallback(F)
@@ -261,7 +190,6 @@ class MainWindow(QMainWindow):
             self.player.errorCallback = lambda s : self.errorCallback(s)
             self.player.setVolume(self.sldVolume.value())
             self.player.setMute(self.mute)
-            #self.player.disable_video = True
             #self.player.hw_device_type = avio.AV_HWDEVICE_TYPE_QSV
             self.player.start()
 
