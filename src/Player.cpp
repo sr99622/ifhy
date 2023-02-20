@@ -114,10 +114,11 @@ void Player::run()
         reader->errorCallback = errorCallback;
         reader->infoCallback = infoCallback;
         reader->showStreamParameters();
-        const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(reader->pix_fmt());
-        if (!desc) throw avio::Exception("No pixel format in video stream");
 
         if (reader->has_video() && !disable_video) {
+            const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(reader->pix_fmt());
+            if (!desc) throw avio::Exception("No pixel format in video stream");
+
             reader->vpq = vpq_reader;
 
             videoDecoder = new Decoder(reader, AVMEDIA_TYPE_VIDEO, hw_device_type);
@@ -156,9 +157,9 @@ void Player::run()
 
         reader_thread = new std::thread(read, reader, this);
         if (videoDecoder) video_decoder_thread = new std::thread(decode, videoDecoder);
-        if (videoFilter)  video_filter_thread = new std::thread(filter, videoFilter);
+        if (videoFilter)  video_filter_thread  = new std::thread(filter, videoFilter);
         if (audioDecoder) audio_decoder_thread = new std::thread(decode, audioDecoder);
-        if (audioFilter)  audio_filter_thread = new std::thread(filter, audioFilter);
+        if (audioFilter)  audio_filter_thread  = new std::thread(filter, audioFilter);
 
         display = new Display(reader, this);
         if (videoFilter) display->vfq_in = videoFilter->frame_out_q;

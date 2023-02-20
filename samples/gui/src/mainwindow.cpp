@@ -123,7 +123,7 @@ void MainWindow::onBtnStopClicked()
 void MainWindow::onBtnRecordClicked()
 {
     if (player) {
-        std::string ext = std::filesystem::path(player->uri).extension();
+        std::string ext = std::filesystem::path(player->uri).extension().string();
         std::stringstream str;
         str << "output" << ext;
         player->togglePiping(str.str());

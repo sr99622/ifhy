@@ -10,7 +10,7 @@ class Slider(QSlider):
             self.setMouseTracking(True)
 
     def leaveEvent(self, e):
-        self.P.updatePosition("", 0)
+        self.P.updatePosition(-1, 0)
 
     def mousePressEvent(self, e):
         pct = e.position().x() / self.width()
@@ -56,9 +56,9 @@ class Progress(QWidget):
         lytProgress = QGridLayout(self)
         if self.showPosition:
             lytProgress.addWidget(self.lblPosition,  0, 1, 1, 1)
-        lytProgress.addWidget(self.lblProgress,  1, 0, 1, 1)
-        lytProgress.addWidget(self.sldProgress,  1, 1, 1, 1)
-        lytProgress.addWidget(self.lblDuration,  1, 2, 1, 1)
+        lytProgress.addWidget(self.lblProgress,      1, 0, 1, 1)
+        lytProgress.addWidget(self.sldProgress,      1, 1, 1, 1)
+        lytProgress.addWidget(self.lblDuration,      1, 2, 1, 1)
         lytProgress.setContentsMargins(0, 0, 0, 0)
         lytProgress.setColumnStretch(1, 10)
 
@@ -76,8 +76,11 @@ class Progress(QWidget):
 
     def updatePosition(self, f, n):
         if self.showPosition:
-            position = int(f * self.duration)
-            self.lblPosition.setText(self.timestring(position), n)
+            if f >= 0:
+                position = int(f * self.duration)
+                self.lblPosition.setText(self.timestring(position), n)
+            else:
+                self.lblPosition.setText("", 0)
 
     def timestring(self, n):
         time_interval = int(n / 1000)

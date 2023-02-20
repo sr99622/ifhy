@@ -123,7 +123,7 @@ static void read(Reader* reader, Player* player)
         if (reader->apq) reader->apq->push_move(Packet(nullptr));
     }
     catch (const QueueClosedException& e) {}
-    //std::cout << "reader finished" << std::endl;
+    std::cout << "reader finished" << std::endl;
 }
 
 static void decode(Decoder* decoder) 
@@ -149,7 +149,7 @@ static void decode(Decoder* decoder)
     }
 
     decoder->frame_q->push_move(Frame(nullptr));
-    //std::cout << decoder->strMediaType << " decoder finished" << std::endl;
+    std::cout << decoder->strMediaType << " decoder finished" << std::endl;
 }
 
 static void filter(Filter* filter)
@@ -173,7 +173,7 @@ static void filter(Filter* filter)
     }
 
     filter->frame_out_q->push_move(Frame(nullptr));
-    //std::cout << filter->strMediaType() << " filter finished" << std::endl;
+    std::cout << filter->strMediaType() << " filter finished" << std::endl;
 }
 
 

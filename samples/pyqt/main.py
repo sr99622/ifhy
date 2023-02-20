@@ -109,6 +109,8 @@ class MainWindow(QMainWindow):
         msgBox.setStandardButtons(QMessageBox.StandardButton.Ok)
         msgBox.setIcon(QMessageBox.Icon.Critical)
         msgBox.exec()
+        self.setPlayButton()
+        self.setRecordButton()
 
     def closeEvent(self, e):
         self.closing = True
@@ -147,6 +149,9 @@ class MainWindow(QMainWindow):
         if self.showProgress:
             self.signals.progress.emit(f)
 
+    def infoCallback(self, s):
+        print(s)
+
     def setPlayButton(self):
         if self.playing:
             if self.player.isPaused():
@@ -181,8 +186,10 @@ class MainWindow(QMainWindow):
             self.player.cbMediaPlayingStarted = lambda n : self.mediaPlayingStarted(n)
             self.player.cbMediaPlayingStopped = lambda : self.mediaPlayingStopped()
             self.player.errorCallback = lambda s : self.errorCallback(s)
+            self.player.infoCallback = lambda s : self.infoCallback(s)
             self.player.setVolume(self.sldVolume.value())
             self.player.setMute(self.mute)
+            #self.player.disable_video = True
             #self.player.hw_device_type = avio.AV_HWDEVICE_TYPE_QSV
             self.player.start()
 

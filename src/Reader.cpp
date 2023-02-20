@@ -119,6 +119,7 @@ AVPacket* Reader::seek()
         std::stringstream str;
         str << "Reader seek exception: " << e.what();
         if (errorCallback) errorCallback(str.str());
+        else std::cout << str.str() << std::endl;
         return nullptr;
     }
 
@@ -192,8 +193,8 @@ void Reader::pipe_write(AVPacket* pkt)
 
         std::stringstream str;
         str << "Record function failure: " << e.what();
-        std::cout << str.str() << std::endl;
         if (errorCallback) errorCallback(str.str());
+        else std::cout << str.str() << std::endl;
     }
 }
 

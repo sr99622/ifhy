@@ -237,6 +237,10 @@ void Display::display()
                 SDL_Delay(SDL_EVENT_LOOP_WAIT);
                 f = Frame(640, 480, AV_PIX_FMT_YUV420P);
                 f.m_rts = rtClock.stream_time();
+                if (P->running)
+                    continue;
+                else
+                    break;
             }
 
             paused_frame = f;
@@ -367,6 +371,7 @@ void Display::AudioCallback(void* userdata, uint8_t* audio_buffer, int len)
     memset(temp, 0, len);
     Frame f;
     int ptr = 0;
+    Player* player = (Player*)d->player;
 
     if (d->paused)
         return;
@@ -390,7 +395,7 @@ void Display::AudioCallback(void* userdata, uint8_t* audio_buffer, int len)
 
                     swr_convert(d->swr_ctx, &d->swr_buffer, nb_samples, data, nb_samples);
                     int mark = std::min(len, d->swr_buffer_size);
-                    if (((Player*)(d->player))->running) memcpy(temp + ptr, d->swr_buffer, mark);
+                    if (player->running) memcpy(temp + ptr, d->swr_buffer, mark);
                     ptr += mark;
                     len -= mark;
                 }
@@ -414,6 +419,17 @@ void Display::AudioCallback(void* userdata, uint8_t* audio_buffer, int len)
 
             d->rtClock.sync(f.m_rts); 
             d->reader->seek_found_pts = AV_NOPTS_VALUE;
+
+            if (player->progressCallback) {
+                if (d->reader->duration()) {
+                    float pct = (float)f.m_rts / (float)d->reader->duration();
+                    int progress = (int)(1000 * pct);
+                    if (progress != player->last_progress) {
+                        player->progressCallback(pct);
+                        player->last_progress = progress;
+                    }
+                }
+            }
 
             if (d->afq_out)
                 d->afq_out->push_move(f);
@@ -544,7 +560,7 @@ void Display::snapshot()
         av_packet_unref(&pkt);
         ex.ck(av_write_trailer(fmt_ctx), AWT);
     }    
-    catch (Exception& e) {
+    catch (const Exception& e) {
         std::cout << "Display::snapshot exception: " << e.what() << std::endl;
     }    
 
