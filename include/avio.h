@@ -114,7 +114,8 @@ static void read(Reader* reader, Player* player)
     catch (const Exception& e) { 
         std::stringstream str;
         str << "Reader thread loop error: " << e.what();
-        if (reader->errorCallback) reader->errorCallback(str.str());
+        std::cout << str.str() << std::endl;
+        if (player->errorCallback) reader->errorCallback(str.str());
     }
 
     try {

@@ -5,10 +5,9 @@ import cv2
 from time import sleep
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, \
 QGridLayout, QWidget, QSlider, QLabel, QMessageBox
-from PyQt6.QtCore import Qt, pyqtSignal, QObject, QPoint
-from PyQt6.QtGui import QPainter
+from PyQt6.QtCore import Qt, pyqtSignal, QObject
 from glwidget import GLWidget
-from progress import Slider, Position, Progress
+from progress import Progress
 
 sys.path.append("../../build")
 import avio
@@ -85,7 +84,6 @@ class MainWindow(QMainWindow):
         return F
 
     def btnMuteClicked(self):
-        print("btnMuteClicked")
         self.mute = not self.mute
         self.player.setMute(self.mute)
         if self.mute:
@@ -94,7 +92,6 @@ class MainWindow(QMainWindow):
             self.btnMute.setText("Mute")
 
     def btnRecordClicked(self):
-        print("btnRecordClicked")
         if self.playing:
             _, file_ext = os.path.splitext(self.player.uri)
             print(file_ext)
@@ -120,7 +117,6 @@ class MainWindow(QMainWindow):
             sleep(0.001)
 
     def btnStopClicked(self):
-        print("btnStopClicked")
         self.player.running = False
 
     def playerStarted(self, n):
@@ -129,7 +125,6 @@ class MainWindow(QMainWindow):
             self.progress.updateDuration(n)
 
     def playerStopped(self):
-        print("playerStopped")
         if not self.closing:
             self.glWidget.clear()
             self.setPlayButton()
@@ -139,7 +134,6 @@ class MainWindow(QMainWindow):
                 self.progress.updateDuration(0)
 
     def mediaPlayingStopped(self):
-        print("mediaPlayingStopped")
         self.playing = False
         self.signals.stopped.emit()
 
@@ -165,14 +159,13 @@ class MainWindow(QMainWindow):
     def setRecordButton(self):
         if self.playing:
             if self.player.isPiping():
-                self.btnRecord.setText("Recording...")
+                self.btnRecord.setText("Recording")
             else:
                 self.btnRecord.setText("Record")
         else:
             self.btnRecord.setText("Record")
 
     def btnPlayClicked(self):
-        print("btnPlay")
         if self.playing:
             self.player.togglePaused()
             self.setPlayButton()

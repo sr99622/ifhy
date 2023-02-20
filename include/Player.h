@@ -53,18 +53,15 @@ public:
     Queue<Frame>*  afq_decoder;
     Queue<Frame>*  afq_filter;
 
-    std::vector<std::thread*> ops;
-
     std::function<int(void)> width = nullptr;
     std::function<int(void)> height = nullptr;
-
     std::function<void(float)> progressCallback = nullptr;
     std::function<void(const Frame&)> renderCallback = nullptr;
     std::function<Frame(Frame&)> pythonCallback  = nullptr;
-  	std::function<void(const std::string&)> infoCallback = nullptr;
-	std::function<void(const std::string&)> errorCallback = nullptr;
     std::function<void(int64_t)> cbMediaPlayingStarted = nullptr;
     std::function<void(void)> cbMediaPlayingStopped = nullptr;
+  	std::function<void(const std::string&)> infoCallback = nullptr;
+	std::function<void(const std::string&)> errorCallback = nullptr;
 
     uint64_t hWnd = 0;
     std::string uri;
@@ -88,16 +85,16 @@ public:
 
     bool isPaused();
     bool isPiping();
-    void setMute(bool arg);
-    void setVolume(int arg);
     void togglePaused();
-    void seek(float arg);
     void togglePiping(const std::string& filename);
     void key_event(int keyCode);
     void clear_queues();
     void clear_decoders();
     void run();
     void start();
+    void seek(float arg);
+    void setMute(bool arg);
+    void setVolume(int arg);
     bool checkForStreamHeader(const char* name);
 
 };

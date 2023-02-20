@@ -117,7 +117,6 @@ Decoder::Decoder(Reader* reader, AVMediaType mediaType, AVHWDeviceType hw_device
         ex.ck(avcodec_open2(dec_ctx, dec, NULL), AO2);
     }
     catch (const Exception& e) {
-        close();
         std::stringstream str;
         str << "Decoder constructor exception: " << e.what();
         throw std::runtime_error(str.str());
@@ -127,11 +126,6 @@ Decoder::Decoder(Reader* reader, AVMediaType mediaType, AVHWDeviceType hw_device
 Decoder::~Decoder()
 {
     std::cout << "~Decoder" << std::endl;
-    close();
-}
-
-void Decoder::close()
-{
     if (frame) av_frame_free(&frame);
     if (sw_frame) av_frame_free(&sw_frame);
     if (cvt_frame) av_frame_free(&cvt_frame);

@@ -110,8 +110,9 @@ void Player::run()
         afq_decoder = new Queue<Frame>;
         afq_filter  = new Queue<Frame>;
 
-
         reader = new Reader(uri.c_str());
+        reader->errorCallback = errorCallback;
+        reader->infoCallback = infoCallback;
         reader->showStreamParameters();
         const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(reader->pix_fmt());
         if (!desc) throw avio::Exception("No pixel format in video stream");
@@ -122,10 +123,14 @@ void Player::run()
             videoDecoder = new Decoder(reader, AVMEDIA_TYPE_VIDEO, hw_device_type);
             videoDecoder->pkt_q = vpq_reader;
             videoDecoder->frame_q = vfq_decoder;
-            
+            videoDecoder->errorCallback = errorCallback;
+            videoDecoder->infoCallback = infoCallback;
+
             videoFilter = new Filter(*videoDecoder, video_filter.c_str());
             videoFilter->frame_in_q = vfq_decoder;
             videoFilter->frame_out_q = vfq_filter;
+            videoFilter->errorCallback = errorCallback;
+            videoFilter->infoCallback = infoCallback;
         }
 
         if (reader->has_audio() && !disable_audio) {
@@ -134,10 +139,14 @@ void Player::run()
             audioDecoder = new Decoder(reader, AVMEDIA_TYPE_AUDIO);
             audioDecoder->pkt_q = apq_reader;
             audioDecoder->frame_q = afq_decoder;
+            audioDecoder->errorCallback = errorCallback;
+            audioDecoder->infoCallback = infoCallback;
 
             audioFilter = new Filter(*audioDecoder, audio_filter.c_str());
             audioFilter->frame_in_q = afq_decoder;
             audioFilter->frame_out_q = afq_filter;
+            audioFilter->errorCallback = errorCallback;
+            audioFilter->infoCallback = infoCallback;
         }
 
         if(checkForStreamHeader(uri.c_str())) {
@@ -166,13 +175,11 @@ void Player::run()
         running = false;
         std::cout << "display done" << std::endl;
     }
-    catch (const std::exception e) {
-        std::stringstream str;
-        str << "avio player error: " << e.what();
+    catch (const Exception& e) {
         if (errorCallback)
-            errorCallback(str.str());
+            errorCallback(e.what());
         else 
-            std::cout << str.str() << std::endl;
+            std::cout << e.what() << std::endl;
         running = false;
     }
     

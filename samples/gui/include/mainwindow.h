@@ -45,6 +45,7 @@ protected:
 
 signals:
     void uiUpdate();
+    void showError(const QString&);
 
 public slots:
     void onBtnPlayClicked();
@@ -56,9 +57,10 @@ public slots:
     void mediaPlayingStarted(qint64);
     void mediaPlayingStopped();
     void mediaProgress(float);
-    void criticalError(const QString&);
-    void infoMessage(const QString&);
+    void criticalError(const std::string&);
+    void infoMessage(const std::string&);
     void updateUI();
+    void onShowError(const QString&);
 
 };
 

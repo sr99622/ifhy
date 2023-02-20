@@ -1,4 +1,5 @@
 #include <iostream>
+#include <filesystem>
 #include <QGridLayout>
 #include <QMessageBox>
 #include "mainwindow.h"
@@ -15,7 +16,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
     btnRecord = new QPushButton("Record");
     connect(btnRecord, SIGNAL(clicked()), this, SLOT(onBtnRecordClicked()));
-    btnRecord->setEnabled(false);
 
     btnMute = new QPushButton("Mute");
     connect(btnMute, SIGNAL(clicked()), this, SLOT(onBtnMuteClicked()));
@@ -49,6 +49,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     setCentralWidget(pnlMain);
 
     connect(this, SIGNAL(uiUpdate()), this, SLOT(updateUI()));
+    connect(this, SIGNAL(showError(const QString&)), this, SLOT(onShowError(const QString&)));
     connect(progress, SIGNAL(seek(float)), this, SLOT(seek(float)));
 }
 
@@ -76,22 +77,19 @@ void MainWindow::setRecordButton()
 {
     if (player) {
         if (player->isPiping()) {
-            btnRecord->setText("=-=-=");
+            btnRecord->setText("Recording");
         }
         else {
             btnRecord->setText("Record");
         }
-        btnRecord->setEnabled(true);
     }
     else {
         btnRecord->setText("Record");
-        btnRecord->setEnabled(false);
     }
 }
 
 void MainWindow::onBtnPlayClicked()
 {
-    std::cout << "onBtnPlayClicked" << std::endl;
     if (player) {
         player->togglePaused();
     }
@@ -100,15 +98,13 @@ void MainWindow::onBtnPlayClicked()
         player->width = [&]() { return glWidget->width(); };
         player->height = [&]() { return glWidget->height(); };
         player->uri = uri;
-//#ifdef _WIN32        
-//        player->hWnd = glWidget->winId();
-//#else
         player->video_filter = "format=rgb24";
         player->renderCallback = [&](const avio::Frame& frame) { glWidget->renderCallback(frame); };
-//#endif
         player->progressCallback = [&](float arg) { progress->setProgress(arg); };
         player->cbMediaPlayingStarted = [&](int64_t duration) { mediaPlayingStarted(duration); };
         player->cbMediaPlayingStopped = [&]() { mediaPlayingStopped(); };
+        player->errorCallback = [&](const std::string& msg) { criticalError(msg); };
+        player->infoCallback = [&](const std::string& msg) { infoMessage(msg); };
         player->setMute(mute);
         player->setVolume(sldVolume->value());
         player->start();
@@ -119,26 +115,24 @@ void MainWindow::onBtnPlayClicked()
 
 void MainWindow::onBtnStopClicked()
 {
-    std::cout << "stop" << std::endl;
     if (player) {
         player->running = false;
-        if (player->isPaused()) player->togglePaused();
     }
-    //setPlayButton();
-    //setRecordButton();
 }
 
 void MainWindow::onBtnRecordClicked()
 {
-    std::cout << "record" << std::endl;
-    //if (glWidget->player)
-    //    glWidget->player->toggle_pipe_out("test.webm");
+    if (player) {
+        std::string ext = std::filesystem::path(player->uri).extension();
+        std::stringstream str;
+        str << "output" << ext;
+        player->togglePiping(str.str());
+    }
     setRecordButton();
 }
 
 void MainWindow::onBtnMuteClicked()
 {
-    std::cout << "mute" << std::endl;
     mute = !mute;
     if (player)
         player->setMute(mute);
@@ -150,7 +144,6 @@ void MainWindow::onBtnMuteClicked()
 
 void MainWindow::onSldVolumeChanged(int arg)
 {
-    std::cout << "volume: " << arg << std::endl;
     if (player) player->setVolume(arg);
 }
 
@@ -164,37 +157,29 @@ void MainWindow::closeEvent(QCloseEvent* event)
 {
     if (player) {
         player->running = false;
-        if (player->isPaused()) player->togglePaused();
     }
     while (player) std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 void MainWindow::seek(float arg)
 {
-    std::cout << "seek: " << arg << std::endl;
     if (player) player->seek(arg);
 }
 
 void MainWindow::mediaPlayingStarted(qint64 duration)
 {
-    std::cout << "MainWindow::mediaPlayingStarted" << std::endl;
     progress->setDuration(duration);
     emit uiUpdate();
-    //setPlayButton();
-    //setRecordButton();
 }
 
 void MainWindow::mediaPlayingStopped()
 {
-    std::cout << "MainWindow::mediaPlayingStopped" << std::endl;
     progress->setProgress(0);
     emit uiUpdate();
     delete player;
     player = nullptr;
     glWidget->f.invalidate();
     glWidget->update();
-    //setPlayButton();
-    //setRecordButton();
 }
 
 void MainWindow::mediaProgress(float arg)
@@ -202,7 +187,7 @@ void MainWindow::mediaProgress(float arg)
     progress->setProgress(arg);
 }
 
-void MainWindow::criticalError(const QString& msg)
+void MainWindow::onShowError(const QString& msg)
 {
     QMessageBox msgBox(this);
     msgBox.setWindowTitle("Critical Error");
@@ -213,8 +198,12 @@ void MainWindow::criticalError(const QString& msg)
     setRecordButton();
 }
 
-void MainWindow::infoMessage(const QString& msg)
+void MainWindow::criticalError(const std::string& msg)
 {
-    std::cout << "message from mainwindow" << std::endl;
-    std::cout << msg.toLatin1().data() << std::endl;
+    emit showError(msg.c_str());
+}
+
+void MainWindow::infoMessage(const std::string& msg)
+{
+    std::cout << msg << std::endl;
 }

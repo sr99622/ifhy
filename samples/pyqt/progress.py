@@ -42,7 +42,7 @@ class Progress(QWidget):
         super().__init__()
         self.w = w
         self.duration = 0
-        self.showPosition = False
+        self.showPosition = True
 
         self.sldProgress = Slider(Qt.Orientation.Horizontal, self)
         self.sldProgress.setMaximum(1000)

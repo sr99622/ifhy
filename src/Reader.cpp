@@ -73,7 +73,6 @@ Reader::Reader(const char* filename)
         //if (video_codec() == AV_CODEC_ID_HEVC) throw Exception("HEVC compression is not supported by default configuration");
     }
     catch (const Exception& e) {
-        close();
         std::stringstream str;
         str << "Reader constructor exception: " << e.what();
         throw Exception(str.str());
@@ -83,11 +82,6 @@ Reader::Reader(const char* filename)
 Reader::~Reader()
 {
     std::cout << "~Reader" << std::endl;
-    close();
-}
-
-void Reader::close()
-{
     if (fmt_ctx) avformat_close_input(&fmt_ctx);
 }
 
@@ -198,6 +192,7 @@ void Reader::pipe_write(AVPacket* pkt)
 
         std::stringstream str;
         str << "Record function failure: " << e.what();
+        std::cout << str.str() << std::endl;
         if (errorCallback) errorCallback(str.str());
     }
 }

@@ -42,7 +42,6 @@ public:
 	~Reader();
 	AVPacket* read();
 
-	//void* process = nullptr;
 	std::function<void(const std::string&)> infoCallback = nullptr;
 	std::function<void(const std::string&)> errorCallback = nullptr;
 
@@ -56,7 +55,6 @@ public:
 	void start_from(int milliseconds);
 	void end_at(int milliseconds);
 	void showStreamParameters();
-	void close();
 
 	int64_t start_time();
 	int64_t duration();
